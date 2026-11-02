@@ -261,6 +261,7 @@ export default function PitchScreen() {
                         key={item.durationMinutes}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: selected }}
+                        aria-checked={selected}
                         onPress={() => setDuration(item.durationMinutes)}
                         style={[
                           styles.option,

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-02 — M3 Venue setup (0.4.0)
+
+- Set up your venue: name, Lagos area, address, landmark, amenities and the first pitch; sent to PitchPadi for review. If the connection drops, the app checks whether the venue was saved and opens it.
+- Manage venue: review status, "Get ready for bookings" steps, the review note with "Ask for another review", facilities and pitches with their state.
+- Hours and prices: open or closed per day with 30-minute steppers, copy to weekdays or every day, prices for 1, 1½ and 2 hours, cancellation terms, publish and make private. Peak prices from the website are kept as they are.
+- Venue details: edit name, area, address, landmark and amenities.
+- Review venues (PitchPadi team): waiting, sent back and approved; call the owner; approve or send back with a note.
+- Switches, checkboxes and radio buttons now report their state on every platform.
+
 ## 2026-11-02 — M2 Venue mode (0.3.0)
 
 - Venue tab: the day's bookings by pitch with status (paid how, to collect, cancelled, being paid online), totals (bookings, paid, to collect), previous/next day and back to today, venue switcher; refreshes every minute and on opening.

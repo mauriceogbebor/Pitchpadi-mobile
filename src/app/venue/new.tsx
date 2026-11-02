@@ -35,6 +35,7 @@ import {
   nextDates,
 } from "@/lib/format";
 import { newIdempotencyKey } from "@/lib/ids";
+import { nairaInput, toKobo } from "@/lib/money";
 import {
   CHANNELS,
   useVenueCalendar,
@@ -62,19 +63,6 @@ function lagosInstant(date: string, minute: number): string {
   const hh = String(Math.floor(minute / 60)).padStart(2, "0");
   const mm = String(minute % 60).padStart(2, "0");
   return `${date}T${hh}:${mm}:00+01:00`;
-}
-
-/** "25,000" or "25000.50" → kobo, or null when it is not a price. */
-function toKobo(value: string): number | null {
-  const cleaned = value.replace(/[₦,\s]/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
-  return Math.round(Number(cleaned) * 100);
-}
-
-function nairaInput(minor: number): string {
-  const naira = Math.floor(minor / 100);
-  const kobo = minor % 100;
-  return `${String(naira).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${kobo ? `.${String(kobo).padStart(2, "0")}` : ""}`;
 }
 
 /** Record a phone, WhatsApp or walk-in booking, with a live check of the time. */

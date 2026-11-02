@@ -94,6 +94,23 @@ export default function RootLayout() {
           />
           <Stack.Screen name="venue/new" options={{ title: "Add booking" }} />
           <Stack.Screen
+            name="venue/setup"
+            options={{ title: "Set up your venue" }}
+          />
+          <Stack.Screen name="venue/manage" options={{ title: "Your venue" }} />
+          <Stack.Screen
+            name="venue/details"
+            options={{ title: "Venue details" }}
+          />
+          <Stack.Screen
+            name="venue/hours"
+            options={{ title: "Hours and prices" }}
+          />
+          <Stack.Screen
+            name="admin/venues"
+            options={{ title: "Review venues" }}
+          />
+          <Stack.Screen
             name="venue/booking/[reservationId]"
             options={{ title: "Booking" }}
           />

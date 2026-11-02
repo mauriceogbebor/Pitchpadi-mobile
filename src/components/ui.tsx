@@ -117,6 +117,7 @@ export function Button({
   busy,
   style,
   textColor,
+  accessibilityLabel,
   accessibilityHint,
 }: {
   label: string;
@@ -127,6 +128,8 @@ export function Button({
   style?: ViewStyle;
   /** For buttons on a coloured surface, such as the booked card. */
   textColor?: string;
+  /** When the visible label is not enough on its own (several "Approve" buttons). */
+  accessibilityLabel?: string;
   accessibilityHint?: string;
 }) {
   const colors = useColors();
@@ -145,6 +148,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!inactive, busy: !!busy }}
+      accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       disabled={inactive}
       onPress={onPress}

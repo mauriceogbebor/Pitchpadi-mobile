@@ -90,9 +90,18 @@ export default function VenueScreen() {
     return (
       <Screen>
         <Heading>Your venue</Heading>
-        <Notice title="No venue on this account">
+        <Notice
+          title="No venue on this account"
+          action={
+            <Button
+              label="Set up your venue"
+              onPress={() => router.push("/venue/setup")}
+            />
+          }
+        >
           <Body tone="muted">
-            Ask your venue&apos;s owner to add your phone number.
+            Run a pitch? Set it up here. Work at one? Ask the owner to add your
+            phone number.
           </Body>
         </Notice>
       </Screen>
@@ -123,7 +132,30 @@ export default function VenueScreen() {
       >
         <View style={{ gap: space.xs }}>
           <Heading>{venue.name}</Heading>
-          <Body tone="muted">{venue.role === "owner" ? "Owner" : "Staff"}</Body>
+          <View style={styles.roleRow}>
+            <Body tone="muted">
+              {venue.role === "owner" ? "Owner" : "Staff"}
+              {venue.status !== "approved"
+                ? venue.status === "rejected"
+                  ? " · Needs changes"
+                  : " · In review"
+                : ""}
+            </Body>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({
+                  pathname: "/venue/manage",
+                  params: { organizationId: venue.id },
+                })
+              }
+              hitSlop={10}
+            >
+              <Body tone="link" weight="semibold">
+                {venue.role === "owner" ? "Manage venue" : "Venue setup"}
+              </Body>
+            </Pressable>
+          </View>
         </View>
         {venues.length > 1 && (
           <ChipRow label="Venue">
@@ -385,6 +417,12 @@ function EntryRow({
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
   dayRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  roleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: space.md,
+  },
   dayButton: {
     width: TAP,
     height: TAP,

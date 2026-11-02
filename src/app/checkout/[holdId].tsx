@@ -423,6 +423,7 @@ function DetailsForm({
               key={item.value}
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
+              aria-checked={selected}
               onPress={() => setMethod(item.value)}
               style={[
                 styles.method,
