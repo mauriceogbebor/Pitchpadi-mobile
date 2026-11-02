@@ -1,0 +1,508 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  getHold,
+  releaseHold,
+  startCheckout,
+  type Checkout,
+  type Hold,
+  type PaymentMethod,
+} from "@/api/generated";
+import { useAuth } from "@/auth/auth-context";
+import { BookedCard } from "@/components/booked-card";
+import { HoldCountdown } from "@/components/hold-countdown";
+import {
+  Body,
+  Button,
+  Card,
+  Field,
+  Heading,
+  Notice,
+  Skeleton,
+} from "@/components/ui";
+import {
+  dateParts,
+  formatDuration,
+  formatInstantTime,
+  formatNaira,
+  formatPhone,
+} from "@/lib/format";
+import { newIdempotencyKey } from "@/lib/ids";
+import { radius, space, TAP } from "@/theme/tokens";
+import { useColors } from "@/theme/use-theme";
+
+type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
+
+const METHODS: { value: PaymentMethod; label: string; hint: string }[] = [
+  { value: "card", label: "Card", hint: "Visa, Mastercard or Verve" },
+  {
+    value: "bank_transfer",
+    label: "Bank transfer",
+    hint: "Send to a one-time account. We keep your time while the bank confirms.",
+  },
+  { value: "ussd", label: "USSD", hint: "Dial a code on any phone" },
+];
+const METHOD_NAME: Record<PaymentMethod, string> = {
+  card: "card",
+  bank_transfer: "bank transfer",
+  ussd: "USSD",
+};
+
+/** The hold, the player's details and payment, then the booking. */
+export default function CheckoutScreen() {
+  const { holdId } = useLocalSearchParams<{ holdId: string }>();
+  const colors = useColors();
+  const queryClient = useQueryClient();
+
+  const hold = useQuery({
+    queryKey: ["hold", holdId],
+    queryFn: async () => {
+      const response = await getHold(holdId);
+      if (response.status === 404)
+        throw new Error("We could not find this booking.");
+      if (response.status !== 200)
+        throw new Error("We could not load your booking.");
+      return response.data.hold;
+    },
+    // While a payment is open, check every few seconds until the webhook lands.
+    refetchInterval: (query) =>
+      query.state.data && awaitingPayment(query.state.data) ? 3000 : false,
+  });
+
+  const booked =
+    hold.data &&
+    (hold.data.status === "confirmed" || hold.data.status === "completed") &&
+    hold.data.booking;
+  useEffect(() => {
+    if (booked)
+      void queryClient.invalidateQueries({ queryKey: ["myBookings"] });
+  }, [booked, queryClient]);
+
+  const onEnd = useCallback(() => void hold.refetch(), [hold]);
+
+  return (
+    <SafeAreaView
+      edges={["bottom"]}
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
+      <Stack.Screen
+        options={{
+          title: booked ? "Booked" : "Checkout",
+          headerBackTitle: "Back",
+        }}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {hold.isPending ? (
+            <Skeleton height={160} count={2} />
+          ) : hold.isError ? (
+            <Notice
+              tone="danger"
+              title={hold.error.message}
+              action={
+                <Button
+                  variant="outline"
+                  label="Try again"
+                  onPress={() => void hold.refetch()}
+                />
+              }
+            >
+              <Body>Nothing has changed on our side.</Body>
+            </Notice>
+          ) : booked ? (
+            <BookedCard
+              booking={{
+                reference: hold.data.booking!.reference,
+                pitch: hold.data.pitch,
+                localDate: hold.data.localDate,
+                localStart: hold.data.localStart,
+                localEnd: hold.data.localEnd,
+                amountMinor: hold.data.amountDueMinor,
+              }}
+              policy={hold.data.cancellationPolicy}
+              celebrate
+            />
+          ) : isLive(hold.data) ? (
+            <LiveHold hold={hold.data} onEnd={onEnd} onChanged={onEnd} />
+          ) : (
+            <EndedHold hold={hold.data} />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function isLive(hold: Hold) {
+  return (
+    (hold.status === "held" || hold.status === "pending_payment") &&
+    hold.expiresAt !== null
+  );
+}
+
+function awaitingPayment(hold: Hold) {
+  return isLive(hold) && hold.payment?.status === "checkout_open";
+}
+
+/** Opens the payment page: the in-app test page, or the provider in a browser. */
+async function openPayment(payment: {
+  attemptId: string;
+  checkoutUrl: string | null;
+}) {
+  if (!payment.checkoutUrl || payment.checkoutUrl.startsWith("/pay/test/")) {
+    router.push({
+      pathname: "/pay/test/[attemptId]",
+      params: { attemptId: payment.attemptId },
+    });
+    return;
+  }
+  await WebBrowser.openBrowserAsync(payment.checkoutUrl);
+}
+
+function LiveHold({
+  hold,
+  onEnd,
+  onChanged,
+}: {
+  hold: Hold;
+  onEnd: () => void;
+  onChanged: () => void;
+}) {
+  const colors = useColors();
+  const day = dateParts(hold.localDate);
+  const until = hold.expiresAt ? formatInstantTime(hold.expiresAt) : "";
+  const [payAnotherWay, setPayAnotherWay] = useState(false);
+  const awaiting =
+    awaitingPayment(hold) && !payAnotherWay ? hold.payment : null;
+  const [releasing, setReleasing] = useState(false);
+
+  async function changeTime() {
+    setReleasing(true);
+    try {
+      await releaseHold(hold.id);
+    } catch {
+      // The hold ends by itself anyway; never trap the player here.
+    } finally {
+      setReleasing(false);
+    }
+    router.replace({
+      pathname: "/pitch/[pitchId]",
+      params: { pitchId: hold.pitch.id, date: hold.localDate },
+    });
+  }
+
+  return (
+    <>
+      <View style={[styles.hero, { backgroundColor: "#0B3D2E" }]}>
+        <Heading style={{ color: "#FFFFFF" }} level={2}>
+          {awaiting ? "Waiting for your payment" : "Your time is held"}
+        </Heading>
+        <Body tone="onPrimary" style={{ color: "#E6F2EA" }} size={14}>
+          Payments are in test mode. No real money moves.
+        </Body>
+        <HoldCountdown
+          expiresAt={hold.expiresAt!}
+          serverNow={hold.serverNow}
+          onEnd={onEnd}
+          color="#FFFFFF"
+        />
+        <Body style={{ color: "#E6F2EA" }}>
+          {awaiting
+            ? `Finish paying by ${until} and ${hold.localStart} on ${day.long} is yours. This screen updates by itself when the payment arrives.`
+            : `Nobody else can book ${hold.localStart} on ${day.long} until ${until}.`}
+        </Body>
+      </View>
+
+      <Card>
+        <Heading level={3}>{hold.pitch.facilityName}</Heading>
+        <Body tone="muted">
+          {hold.pitch.name}, {hold.pitch.type}. {hold.pitch.areaName}
+        </Body>
+        <Row label="When">
+          {day.long}, {hold.localStart} to {hold.localEnd} (
+          {formatDuration(hold.durationMinutes)})
+        </Row>
+        <Row label="To pay now">{formatNaira(hold.amountDueMinor)}</Row>
+        <Row label="If plans change">
+          {hold.cancellationPolicy.label}.{" "}
+          <Body weight="body">{hold.cancellationPolicy.summary}</Body>
+        </Row>
+      </Card>
+
+      {awaiting ? (
+        <View style={{ gap: space.md }}>
+          <Heading level={3}>Paying by {METHOD_NAME[awaiting.method]}</Heading>
+          <Body tone="muted">
+            {awaiting.method === "bank_transfer"
+              ? "Bank transfers can take a few minutes to confirm. You can leave this screen and come back from My bookings."
+              : "Already paid? Your booking shows here as soon as the payment is confirmed."}
+          </Body>
+          <Button
+            label="Open the payment page"
+            onPress={() => void openPayment(awaiting)}
+          />
+          <Button
+            variant="ghost"
+            label="Pay another way"
+            onPress={() => setPayAnotherWay(true)}
+            accessibilityHint="Shows the payment form again"
+          />
+        </View>
+      ) : (
+        <DetailsForm
+          hold={hold}
+          onStarted={() => {
+            setPayAnotherWay(false);
+            onChanged();
+          }}
+        />
+      )}
+
+      <Pressable
+        onPress={changeTime}
+        disabled={releasing}
+        accessibilityRole="button"
+        style={styles.textButton}
+      >
+        <Ionicons name="arrow-back" size={18} color={colors.link} />
+        <Body tone="link" weight="semibold">
+          {releasing ? "Letting this time go…" : "Choose a different time"}
+        </Body>
+      </Pressable>
+    </>
+  );
+}
+
+function DetailsForm({
+  hold,
+  onStarted,
+}: {
+  hold: Hold;
+  onStarted: () => void;
+}) {
+  const colors = useColors();
+  const auth = useAuth();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState(
+    auth.status === "signedIn" ? formatPhone(auth.me.user.phone) : "",
+  );
+  const [email, setEmail] = useState("");
+  const [method, setMethod] = useState<PaymentMethod>("card");
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  // Same key for retries of the same method; a new method needs a new key.
+  const key = useRef<{ method: PaymentMethod; value: string } | null>(null);
+
+  async function pay() {
+    if (key.current?.method !== method)
+      key.current = { method, value: newIdempotencyKey() };
+    setBusy(true);
+    setError(null);
+    setErrors({});
+    try {
+      const response = await startCheckout(
+        hold.id,
+        { name, phone, email: email.trim() || null, method },
+        { headers: { "idempotency-key": key.current.value } },
+      );
+      if (response.status === 200 || response.status === 201) {
+        const checkout: Checkout = response.data.checkout;
+        onStarted();
+        await openPayment(checkout);
+        return;
+      }
+      const body = response.data as ErrorBody;
+      if (body.fieldErrors)
+        setErrors(
+          Object.fromEntries(
+            Object.entries(body.fieldErrors).map(([field, list]) => [
+              field,
+              list[0],
+            ]),
+          ),
+        );
+      else setError(body.error ?? "We could not start the payment.");
+      if (response.status === 409) onStarted();
+    } catch {
+      setError(
+        "We could not reach PitchPadi. Your time is still held; try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <View style={{ gap: space.lg }}>
+      <Heading level={3}>Your details</Heading>
+      <Field
+        label="Name for the booking"
+        value={name}
+        onChangeText={setName}
+        autoComplete="name"
+        textContentType="name"
+        autoCapitalize="words"
+        error={errors.name}
+      />
+      <Field
+        label="Phone number"
+        hint="The venue calls this number if anything changes."
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        error={errors.phone}
+      />
+      <Field
+        label="Email (optional)"
+        hint="For a receipt."
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoComplete="email"
+        textContentType="emailAddress"
+        autoCapitalize="none"
+        error={errors.email}
+      />
+      <View style={{ gap: space.sm }} accessibilityRole="radiogroup">
+        <Body weight="semibold">How do you want to pay?</Body>
+        {METHODS.map((item) => {
+          const selected = item.value === method;
+          return (
+            <Pressable
+              key={item.value}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              onPress={() => setMethod(item.value)}
+              style={[
+                styles.method,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: selected ? colors.primary : colors.border,
+                  borderWidth: selected ? 2 : 1,
+                },
+              ]}
+            >
+              <Ionicons
+                name={selected ? "radio-button-on" : "radio-button-off"}
+                size={22}
+                color={selected ? colors.link : colors.textMuted}
+              />
+              <View style={{ flex: 1 }}>
+                <Body weight="semibold">{item.label}</Body>
+                <Body tone="muted" size={14}>
+                  {item.hint}
+                </Body>
+              </View>
+            </Pressable>
+          );
+        })}
+        {errors.method ? <Body tone="danger">{errors.method}</Body> : null}
+      </View>
+      {error ? (
+        <Body tone="danger" accessibilityLiveRegion="assertive">
+          {error}
+        </Body>
+      ) : null}
+      <Button
+        label={`Pay ${formatNaira(hold.amountDueMinor)}`}
+        onPress={pay}
+        busy={busy}
+      />
+    </View>
+  );
+}
+
+function EndedHold({ hold }: { hold: Hold }) {
+  const message =
+    hold.status === "payment_failed"
+      ? "The payment did not go through, so we released the time. If any money left your account, it will be refunded."
+      : hold.releaseReason === "abandoned"
+        ? "You chose another time, so we released this one."
+        : hold.payment
+          ? "The payment did not arrive in time, so we released the time. If money left your account, it will be refunded."
+          : "The clock ran out before payment, so we released the time.";
+  return (
+    <Notice
+      title="This hold has ended"
+      action={
+        <Button
+          label={`Try ${hold.localStart} again`}
+          onPress={() =>
+            router.replace({
+              pathname: "/pitch/[pitchId]",
+              params: {
+                pitchId: hold.pitch.id,
+                date: hold.localDate,
+                start: hold.startsAt,
+              },
+            })
+          }
+        />
+      }
+    >
+      <Body>{message}</Body>
+      <Body tone="muted">
+        If someone else has taken it, you can pick another time there.
+      </Body>
+    </Notice>
+  );
+}
+
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={{ gap: 2, marginTop: space.sm }}>
+      <Body tone="muted" size={14}>
+        {label}
+      </Body>
+      <Body weight="semibold">{children}</Body>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
+  hero: { borderRadius: radius.lg, padding: space.xl, gap: space.sm },
+  method: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    minHeight: TAP + 16,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
+  textButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.xs,
+    minHeight: TAP,
+    alignSelf: "flex-start",
+  },
+});

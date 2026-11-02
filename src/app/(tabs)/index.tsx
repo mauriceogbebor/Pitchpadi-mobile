@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Pressable,
@@ -14,6 +15,7 @@ import {
   searchPitches,
   type PitchAvailability,
 } from "@/api/generated";
+import { Chip, ChipRow, TimeChip } from "@/components/chips";
 import { Body, Button, Card, Heading, Notice, Skeleton } from "@/components/ui";
 import {
   dateParts,
@@ -24,7 +26,7 @@ import {
   TIMES_OF_DAY,
   type TimeOfDay,
 } from "@/lib/format";
-import { radius, space, TAP } from "@/theme/tokens";
+import { space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
 const CHIPS_PER_PITCH = 6;
@@ -168,7 +170,7 @@ export default function PlayScreen() {
               </Notice>
             ) : (
               results.map((result) => (
-                <PitchCard key={result.pitch.id} result={result} />
+                <PitchCard key={result.pitch.id} result={result} date={date} />
               ))
             )}
           </>
@@ -178,134 +180,97 @@ export default function PlayScreen() {
   );
 }
 
-function PitchCard({ result }: { result: PitchAvailability }) {
+function PitchCard({
+  result,
+  date,
+}: {
+  result: PitchAvailability;
+  date: string;
+}) {
   const colors = useColors();
   const { pitch, startTimes } = result;
   const shown = startTimes.slice(0, CHIPS_PER_PITCH);
   const more = startTimes.length - shown.length;
-  return (
-    <Card>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          gap: space.md,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Heading level={3}>{pitch.facilityName}</Heading>
-          <Body tone="muted">
-            {pitch.name}, {pitch.type}
-            {pitch.amenities.includes("floodlights") ? "  ·  Floodlit" : ""}
-          </Body>
-        </View>
-        {pitch.fromPriceMinor !== null && (
-          <View style={{ alignItems: "flex-end" }}>
-            <Body tone="muted" size={13}>
-              from
-            </Body>
-            <Body weight="bold" size={18}>
-              {formatNaira(pitch.fromPriceMinor)}
-            </Body>
-          </View>
-        )}
-      </View>
-      <View
-        style={{
-          flexDirection: "row",
-          gap: space.xs,
-          alignItems: "flex-start",
-        }}
-      >
-        <Ionicons
-          name="location-outline"
-          size={16}
-          color={colors.link}
-          style={{ marginTop: 3 }}
-        />
-        <Body style={{ flex: 1 }}>
-          {pitch.areaName}: {pitch.address}
-          {pitch.landmark ? `, ${pitch.landmark}` : ""}
-        </Body>
-      </View>
-      {startTimes.length ? (
-        <View
-          style={styles.times}
-          accessibilityLabel={`Kick-off times at ${pitch.facilityName}`}
-        >
-          {shown.map((start) => (
-            <View
-              key={start.startsAt}
-              style={[styles.time, { backgroundColor: colors.primary }]}
-            >
-              <Body weight="semibold" tone="onPrimary">
-                {start.localStart}
-              </Body>
-            </View>
-          ))}
-          {more > 0 && (
-            <Body tone="link" weight="semibold" style={{ alignSelf: "center" }}>
-              +{more} more
-            </Body>
-          )}
-        </View>
-      ) : (
-        <Body tone="muted">No open times at this time of day.</Body>
-      )}
-    </Card>
-  );
-}
-
-function ChipRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={{ gap: space.sm }}>
-      <Body weight="semibold">{label}</Body>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: space.sm }}
-      >
-        {children}
-      </ScrollView>
-    </View>
-  );
-}
-
-function Chip({
-  label,
-  selected,
-  onPress,
-  accessibilityLabel,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-  accessibilityLabel?: string;
-}) {
-  const colors = useColors();
+  const open = (start?: string) =>
+    router.push({
+      pathname: "/pitch/[pitchId]",
+      params: { pitchId: pitch.id, date, ...(start ? { start } : {}) },
+    });
   return (
     <Pressable
+      onPress={() => open()}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={accessibilityLabel ?? label}
-      onPress={onPress}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: selected ? colors.primary : colors.card,
-          borderColor: selected ? colors.primary : colors.border,
-        },
-      ]}
+      accessibilityLabel={`${pitch.facilityName}, ${pitch.name}. Open the pitch`}
+      style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
     >
-      <Body weight="semibold" tone={selected ? "onPrimary" : "default"}>
-        {label}
-      </Body>
+      <Card>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            gap: space.md,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Heading level={3}>{pitch.facilityName}</Heading>
+            <Body tone="muted">
+              {pitch.name}, {pitch.type}
+              {pitch.amenities.includes("floodlights") ? "  ·  Floodlit" : ""}
+            </Body>
+          </View>
+          {pitch.fromPriceMinor !== null && (
+            <View style={{ alignItems: "flex-end" }}>
+              <Body tone="muted" size={13}>
+                from
+              </Body>
+              <Body weight="bold" size={18}>
+                {formatNaira(pitch.fromPriceMinor)}
+              </Body>
+            </View>
+          )}
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: space.xs,
+            alignItems: "flex-start",
+          }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={16}
+            color={colors.link}
+            style={{ marginTop: 3 }}
+          />
+          <Body style={{ flex: 1 }}>
+            {pitch.areaName}: {pitch.address}
+            {pitch.landmark ? `, ${pitch.landmark}` : ""}
+          </Body>
+        </View>
+        {startTimes.length ? (
+          <View style={styles.times}>
+            {shown.map((start) => (
+              <TimeChip
+                key={start.startsAt}
+                label={start.localStart}
+                accessibilityLabel={`Kick off at ${start.localStart} at ${pitch.facilityName}`}
+                onPress={() => open(start.startsAt)}
+              />
+            ))}
+            {more > 0 && (
+              <Body
+                tone="link"
+                weight="semibold"
+                style={{ alignSelf: "center" }}
+              >
+                +{more} more
+              </Body>
+            )}
+          </View>
+        ) : (
+          <Body tone="muted">No open times at this time of day.</Body>
+        )}
+      </Card>
     </Pressable>
   );
 }
@@ -317,18 +282,5 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: space.sm,
     marginTop: space.xs,
-  },
-  time: {
-    borderRadius: radius.sm,
-    paddingHorizontal: space.md,
-    minHeight: 40,
-    justifyContent: "center",
-  },
-  chip: {
-    minHeight: TAP - 4,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    paddingHorizontal: space.lg,
-    justifyContent: "center",
   },
 });

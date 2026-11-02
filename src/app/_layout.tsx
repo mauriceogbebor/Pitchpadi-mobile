@@ -8,17 +8,32 @@ import {
   Geist_600SemiBold,
   Geist_700Bold,
 } from "@expo-google-fonts/geist";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { AppState, Platform } from "react-native";
 import { AuthProvider } from "@/auth/auth-context";
 import { useColors, useIsDark } from "@/theme/use-theme";
 import { fonts } from "@/theme/tokens";
 
 SplashScreen.preventAutoHideAsync();
+
+// Refresh what is on screen when the player comes back to the app, for example
+// after paying in another app or checking WhatsApp.
+if (Platform.OS !== "web")
+  focusManager.setEventListener((setFocused) => {
+    const subscription = AppState.addEventListener("change", (state) =>
+      setFocused(state === "active"),
+    );
+    return () => subscription.remove();
+  });
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -63,6 +78,19 @@ export default function RootLayout() {
           <Stack.Screen
             name="sign-in"
             options={{ presentation: "modal", title: "Sign in" }}
+          />
+          <Stack.Screen name="pitch/[pitchId]" options={{ title: "Pitch" }} />
+          <Stack.Screen
+            name="checkout/[holdId]"
+            options={{ title: "Checkout" }}
+          />
+          <Stack.Screen
+            name="pay/test/[attemptId]"
+            options={{ presentation: "modal", title: "Pay" }}
+          />
+          <Stack.Screen
+            name="booking/[reference]"
+            options={{ title: "Booking" }}
           />
         </Stack>
       </AuthProvider>

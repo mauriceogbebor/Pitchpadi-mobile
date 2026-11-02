@@ -116,6 +116,7 @@ export function Button({
   disabled,
   busy,
   style,
+  textColor,
   accessibilityHint,
 }: {
   label: string;
@@ -124,6 +125,8 @@ export function Button({
   disabled?: boolean;
   busy?: boolean;
   style?: ViewStyle;
+  /** For buttons on a coloured surface, such as the booked card. */
+  textColor?: string;
   accessibilityHint?: string;
 }) {
   const colors = useColors();
@@ -157,12 +160,16 @@ export function Button({
     >
       {busy && (
         <ActivityIndicator
-          color={palette.fg}
+          color={textColor ?? palette.fg}
           style={{ marginRight: space.sm }}
         />
       )}
       <Text
-        style={{ color: palette.fg, fontFamily: fonts.semibold, fontSize: 16 }}
+        style={{
+          color: textColor ?? palette.fg,
+          fontFamily: fonts.semibold,
+          fontSize: 16,
+        }}
       >
         {label}
       </Text>

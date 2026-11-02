@@ -5,7 +5,7 @@
  * Football pitch booking for Lagos. Errors are always `{ error, fieldErrors? }`. Money is in kobo (integer). Times are ISO 8601 UTC; local labels use the facility time zone.
  * OpenAPI spec version: 1.0.0
  */
-import { appFetch } from './fetch';
+import { appFetch } from './fetch.ts';
 export interface Ok {
   ok: true;
 }
@@ -47,6 +47,46 @@ export interface Organization {
 export interface Me {
   user: MeUser;
   organizations: Organization[];
+}
+
+export type PublicBookingPitch = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  type: string;
+  facilityName: string;
+  areaName: string;
+  address: string;
+  /** @nullable */
+  landmark: string | null;
+};
+
+export type PublicBookingCurrency = typeof PublicBookingCurrency[keyof typeof PublicBookingCurrency];
+
+
+export const PublicBookingCurrency = {
+  NGN: 'NGN',
+} as const;
+
+export interface PublicBooking {
+  reference: string;
+  status: string;
+  pitch: PublicBookingPitch;
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  durationMinutes: number;
+  startsAt: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  currency: PublicBookingCurrency;
 }
 
 export interface Area {
@@ -737,46 +777,6 @@ export interface CheckoutInput {
   method: PaymentMethod;
 }
 
-export type PublicBookingPitch = {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  id: string;
-  name: string;
-  type: string;
-  facilityName: string;
-  areaName: string;
-  address: string;
-  /** @nullable */
-  landmark: string | null;
-};
-
-export type PublicBookingCurrency = typeof PublicBookingCurrency[keyof typeof PublicBookingCurrency];
-
-
-export const PublicBookingCurrency = {
-  NGN: 'NGN',
-} as const;
-
-export interface PublicBooking {
-  reference: string;
-  status: string;
-  pitch: PublicBookingPitch;
-  localDate: string;
-  localStart: string;
-  localEnd: string;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  durationMinutes: number;
-  startsAt: string;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  amountMinor: number;
-  currency: PublicBookingCurrency;
-}
-
 export interface TestPayment {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   attemptId: string;
@@ -960,6 +960,11 @@ export type LogoutEverywhere200 = {
      * @maximum 9007199254740991
      */
   sessionsEnded: number;
+};
+
+export type ListMyBookings200 = {
+  upcoming: PublicBooking[];
+  past: PublicBooking[];
 };
 
 export type ListAreas200 = {
@@ -1847,6 +1852,50 @@ export const getGetMeUrl = () => {
 export const getMe = async ( options?: Parameters<typeof appFetch>[1]): Promise<getMeResponse> => {
 
   return appFetch<getMeResponse>(getGetMeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type listMyBookingsResponse200 = {
+  data: ListMyBookings200
+  status: 200
+}
+
+export type listMyBookingsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listMyBookingsResponseSuccess = (listMyBookingsResponse200) & {
+  headers: Headers;
+};
+export type listMyBookingsResponseError = (listMyBookingsResponse401) & {
+  headers: Headers;
+};
+
+export type listMyBookingsResponse = (listMyBookingsResponseSuccess | listMyBookingsResponseError)
+
+export const getListMyBookingsUrl = () => {
+
+
+
+
+  return `/v1/me/bookings`
+}
+
+/**
+ * Requires a signed-in user.
+ * @summary The signed-in player's confirmed bookings: paid for while signed in, or booked with their verified phone number. Upcoming soonest first, then the 20 most recent past games
+ */
+export const listMyBookings = async ( options?: Parameters<typeof appFetch>[1]): Promise<listMyBookingsResponse> => {
+
+  return appFetch<listMyBookingsResponse>(getListMyBookingsUrl(),
   {
     ...options,
     method: 'GET'
@@ -3598,7 +3647,7 @@ export const getStartCheckoutUrl = (holdId: string,) => {
 
 /**
  * No sign-in required.
- * @summary Record the guest's details and payment method, extend the hold to that method's deadline and open a payment session. Repeating the same Idempotency-Key returns the same session (200)
+ * @summary Record the guest's details and payment method, extend the hold to that method's deadline and open a payment session. A signed-in caller is linked to the booking (My bookings); signing in is optional. Repeating the same Idempotency-Key returns the same session (200)
  */
 export const startCheckout = async (holdId: string,
     checkoutInput: CheckoutInput, options?: Parameters<typeof appFetch>[1]): Promise<startCheckoutResponse> => {

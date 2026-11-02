@@ -475,6 +475,62 @@
         ]
       }
     },
+    "/v1/me/bookings": {
+      "get": {
+        "operationId": "listMyBookings",
+        "summary": "The signed-in player's confirmed bookings: paid for while signed in, or booked with their verified phone number. Upcoming soonest first, then the 20 most recent past games",
+        "description": "Requires a signed-in user.",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "upcoming": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PublicBooking"
+                      }
+                    },
+                    "past": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PublicBooking"
+                      }
+                    }
+                  },
+                  "required": [
+                    "upcoming",
+                    "past"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/v1/areas": {
       "get": {
         "operationId": "listAreas",
@@ -3170,7 +3226,7 @@
     "/v1/public/holds/{holdId}/checkout": {
       "post": {
         "operationId": "startCheckout",
-        "summary": "Record the guest's details and payment method, extend the hold to that method's deadline and open a payment session. Repeating the same Idempotency-Key returns the same session (200)",
+        "summary": "Record the guest's details and payment method, extend the hold to that method's deadline and open a payment session. A signed-in caller is linked to the booking (My bookings); signing in is optional. Repeating the same Idempotency-Key returns the same session (200)",
         "description": "No sign-in required.",
         "tags": [
           "Public"
@@ -4071,6 +4127,97 @@
           "approved",
           "rejected"
         ]
+      },
+      "PublicBooking": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "pitch": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "facilityName": {
+                "type": "string"
+              },
+              "areaName": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "landmark": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "type",
+              "facilityName",
+              "areaName",
+              "address",
+              "landmark"
+            ],
+            "additionalProperties": false
+          },
+          "localDate": {
+            "type": "string"
+          },
+          "localStart": {
+            "type": "string"
+          },
+          "localEnd": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "NGN"
+            ]
+          }
+        },
+        "required": [
+          "reference",
+          "status",
+          "pitch",
+          "localDate",
+          "localStart",
+          "localEnd",
+          "durationMinutes",
+          "startsAt",
+          "amountMinor",
+          "currency"
+        ],
+        "additionalProperties": false
       },
       "Area": {
         "type": "object",
@@ -5454,97 +5601,6 @@
           "phone",
           "method"
         ]
-      },
-      "PublicBooking": {
-        "type": "object",
-        "properties": {
-          "reference": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "pitch": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "type": {
-                "type": "string"
-              },
-              "facilityName": {
-                "type": "string"
-              },
-              "areaName": {
-                "type": "string"
-              },
-              "address": {
-                "type": "string"
-              },
-              "landmark": {
-                "nullable": true,
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "name",
-              "type",
-              "facilityName",
-              "areaName",
-              "address",
-              "landmark"
-            ],
-            "additionalProperties": false
-          },
-          "localDate": {
-            "type": "string"
-          },
-          "localStart": {
-            "type": "string"
-          },
-          "localEnd": {
-            "type": "string"
-          },
-          "durationMinutes": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "startsAt": {
-            "type": "string"
-          },
-          "amountMinor": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN"
-            ]
-          }
-        },
-        "required": [
-          "reference",
-          "status",
-          "pitch",
-          "localDate",
-          "localStart",
-          "localEnd",
-          "durationMinutes",
-          "startsAt",
-          "amountMinor",
-          "currency"
-        ],
-        "additionalProperties": false
       },
       "TestPayment": {
         "type": "object",
