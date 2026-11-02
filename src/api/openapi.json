@@ -478,7 +478,7 @@
     "/v1/me/bookings": {
       "get": {
         "operationId": "listMyBookings",
-        "summary": "The signed-in player's confirmed bookings: paid for while signed in, or booked with their verified phone number. Upcoming soonest first, then the 20 most recent past games",
+        "summary": "The signed-in player's bookings. inProgress: live holds and open payments they started while signed in (to return to checkout), soonest to expire first. upcoming/past: confirmed bookings paid for while signed in or booked with their verified phone number; upcoming soonest first, then the 20 most recent past games",
         "description": "Requires a signed-in user.",
         "tags": [
           "Auth"
@@ -491,6 +491,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "inProgress": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Hold"
+                      }
+                    },
                     "upcoming": {
                       "type": "array",
                       "items": {
@@ -505,6 +511,7 @@
                     }
                   },
                   "required": [
+                    "inProgress",
                     "upcoming",
                     "past"
                   ],
@@ -4128,6 +4135,242 @@
           "rejected"
         ]
       },
+      "Hold": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "held",
+              "pending_payment",
+              "confirmed",
+              "completed",
+              "no_show",
+              "cancelled",
+              "refunded",
+              "expired",
+              "payment_failed"
+            ]
+          },
+          "expiresAt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "releaseReason": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "expired",
+              "abandoned",
+              "payment_failed"
+            ]
+          },
+          "paymentMethod": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethod"
+              }
+            ]
+          },
+          "pitch": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "facilityName": {
+                "type": "string"
+              },
+              "areaName": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "landmark": {
+                "nullable": true,
+                "type": "string"
+              },
+              "timeZone": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "type",
+              "facilityName",
+              "areaName",
+              "address",
+              "landmark",
+              "timeZone"
+            ],
+            "additionalProperties": false
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "localDate": {
+            "type": "string"
+          },
+          "localStart": {
+            "type": "string"
+          },
+          "localEnd": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "amountMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "amountDueMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "NGN"
+            ]
+          },
+          "cancellationPolicy": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "summary"
+            ],
+            "additionalProperties": false
+          },
+          "payment": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "attemptId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "status": {
+                "$ref": "#/components/schemas/AttemptStatus"
+              },
+              "method": {
+                "$ref": "#/components/schemas/PaymentMethod"
+              },
+              "checkoutUrl": {
+                "nullable": true,
+                "type": "string"
+              },
+              "deadlineAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "attemptId",
+              "status",
+              "method",
+              "checkoutUrl",
+              "deadlineAt"
+            ],
+            "additionalProperties": false
+          },
+          "booking": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "confirmedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reference",
+              "confirmedAt"
+            ],
+            "additionalProperties": false
+          },
+          "serverNow": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "status",
+          "expiresAt",
+          "releaseReason",
+          "paymentMethod",
+          "pitch",
+          "startsAt",
+          "endsAt",
+          "localDate",
+          "localStart",
+          "localEnd",
+          "durationMinutes",
+          "amountMinor",
+          "amountDueMinor",
+          "currency",
+          "cancellationPolicy",
+          "payment",
+          "booking",
+          "serverNow"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "card",
+          "bank_transfer",
+          "ussd"
+        ]
+      },
+      "AttemptStatus": {
+        "type": "string",
+        "enum": [
+          "checkout_open",
+          "succeeded",
+          "failed",
+          "expired",
+          "abandoned"
+        ]
+      },
       "PublicBooking": {
         "type": "object",
         "properties": {
@@ -5256,242 +5499,6 @@
           "amountDueMinor"
         ],
         "additionalProperties": false
-      },
-      "Hold": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "reference": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "held",
-              "pending_payment",
-              "confirmed",
-              "completed",
-              "no_show",
-              "cancelled",
-              "refunded",
-              "expired",
-              "payment_failed"
-            ]
-          },
-          "expiresAt": {
-            "nullable": true,
-            "type": "string"
-          },
-          "releaseReason": {
-            "nullable": true,
-            "type": "string",
-            "enum": [
-              "expired",
-              "abandoned",
-              "payment_failed"
-            ]
-          },
-          "paymentMethod": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMethod"
-              }
-            ]
-          },
-          "pitch": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "type": {
-                "type": "string"
-              },
-              "facilityName": {
-                "type": "string"
-              },
-              "areaName": {
-                "type": "string"
-              },
-              "address": {
-                "type": "string"
-              },
-              "landmark": {
-                "nullable": true,
-                "type": "string"
-              },
-              "timeZone": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "name",
-              "type",
-              "facilityName",
-              "areaName",
-              "address",
-              "landmark",
-              "timeZone"
-            ],
-            "additionalProperties": false
-          },
-          "startsAt": {
-            "type": "string"
-          },
-          "endsAt": {
-            "type": "string"
-          },
-          "localDate": {
-            "type": "string"
-          },
-          "localStart": {
-            "type": "string"
-          },
-          "localEnd": {
-            "type": "string"
-          },
-          "durationMinutes": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "amountMinor": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "amountDueMinor": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN"
-            ]
-          },
-          "cancellationPolicy": {
-            "type": "object",
-            "properties": {
-              "label": {
-                "type": "string"
-              },
-              "summary": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "label",
-              "summary"
-            ],
-            "additionalProperties": false
-          },
-          "payment": {
-            "nullable": true,
-            "type": "object",
-            "properties": {
-              "attemptId": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "status": {
-                "$ref": "#/components/schemas/AttemptStatus"
-              },
-              "method": {
-                "$ref": "#/components/schemas/PaymentMethod"
-              },
-              "checkoutUrl": {
-                "nullable": true,
-                "type": "string"
-              },
-              "deadlineAt": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "attemptId",
-              "status",
-              "method",
-              "checkoutUrl",
-              "deadlineAt"
-            ],
-            "additionalProperties": false
-          },
-          "booking": {
-            "nullable": true,
-            "type": "object",
-            "properties": {
-              "reference": {
-                "type": "string"
-              },
-              "confirmedAt": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "reference",
-              "confirmedAt"
-            ],
-            "additionalProperties": false
-          },
-          "serverNow": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "reference",
-          "status",
-          "expiresAt",
-          "releaseReason",
-          "paymentMethod",
-          "pitch",
-          "startsAt",
-          "endsAt",
-          "localDate",
-          "localStart",
-          "localEnd",
-          "durationMinutes",
-          "amountMinor",
-          "amountDueMinor",
-          "currency",
-          "cancellationPolicy",
-          "payment",
-          "booking",
-          "serverNow"
-        ],
-        "additionalProperties": false
-      },
-      "PaymentMethod": {
-        "type": "string",
-        "enum": [
-          "card",
-          "bank_transfer",
-          "ussd"
-        ]
-      },
-      "AttemptStatus": {
-        "type": "string",
-        "enum": [
-          "checkout_open",
-          "succeeded",
-          "failed",
-          "expired",
-          "abandoned"
-        ]
       },
       "CreateHoldInput": {
         "type": "object",

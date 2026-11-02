@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -9,10 +10,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { listMyBookings, type PublicBooking } from "@/api/generated";
+import { listMyBookings, type Hold, type PublicBooking } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
 import { Body, Button, Card, Heading, Notice, Skeleton } from "@/components/ui";
-import { dateParts, formatNaira, lagosToday, addDays } from "@/lib/format";
+import {
+  addDays,
+  dateParts,
+  formatInstantTime,
+  formatNaira,
+  lagosToday,
+} from "@/lib/format";
 import { space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -29,8 +36,11 @@ export default function BookingsScreen() {
   const auth = useAuth();
   const signedIn = auth.status === "signedIn";
 
+  const userId = signedIn ? auth.me.user.id : null;
   const bookings = useQuery({
-    queryKey: ["myBookings"],
+    // Scoped to the account: another person signing in on this phone never
+    // sees these, even from the cache (AuthProvider also clears it).
+    queryKey: ["myBookings", userId],
     enabled: signedIn,
     queryFn: async () => {
       const response = await listMyBookings();
@@ -39,6 +49,14 @@ export default function BookingsScreen() {
       return response.data;
     },
   });
+
+  // Fresh on every visit: a payment may have landed while the player was away.
+  const { refetch } = bookings;
+  useFocusEffect(
+    useCallback(() => {
+      if (signedIn) void refetch();
+    }, [signedIn, refetch]),
+  );
 
   return (
     <SafeAreaView
@@ -83,7 +101,10 @@ export default function BookingsScreen() {
           >
             <Body>Check your connection.</Body>
           </Notice>
-        ) : bookings.data.upcoming.length + bookings.data.past.length === 0 ? (
+        ) : bookings.data.inProgress.length +
+            bookings.data.upcoming.length +
+            bookings.data.past.length ===
+          0 ? (
           <Notice
             title="No bookings yet"
             action={
@@ -100,6 +121,14 @@ export default function BookingsScreen() {
           </Notice>
         ) : (
           <>
+            {bookings.data.inProgress.length > 0 && (
+              <>
+                <Heading level={2}>Not finished</Heading>
+                {bookings.data.inProgress.map((hold) => (
+                  <UnfinishedRow key={hold.id} hold={hold} />
+                ))}
+              </>
+            )}
             <Heading level={2}>Coming up</Heading>
             {bookings.data.upcoming.length === 0 ? (
               <Notice
@@ -138,6 +167,44 @@ function dayLabel(date: string) {
   if (date === addDays(today, 1)) return "Tomorrow";
   const parts = dateParts(date);
   return `${parts.weekday} ${parts.day} ${parts.month}`;
+}
+
+/** A time the player is holding or paying for: back to checkout in one tap. */
+function UnfinishedRow({ hold }: { hold: Hold }) {
+  const colors = useColors();
+  const paying = hold.payment?.status === "checkout_open";
+  const until = hold.expiresAt ? formatInstantTime(hold.expiresAt) : "";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${paying ? "Waiting for your payment" : "Held, not paid yet"}: ${hold.pitch.facilityName}, ${dayLabel(hold.localDate)} at ${hold.localStart}. Continue checkout`}
+      onPress={() =>
+        router.push({
+          pathname: "/checkout/[holdId]",
+          params: { holdId: hold.id },
+        })
+      }
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+    >
+      <Card style={{ borderColor: colors.link, borderWidth: 2 }}>
+        <View style={styles.row}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Body weight="semibold" tone="link">
+              {paying ? "Waiting for your payment" : "Held, not paid yet"}
+            </Body>
+            <Body weight="bold" size={18}>
+              {dayLabel(hold.localDate)}, {hold.localStart}
+            </Body>
+            <Body>{hold.pitch.facilityName}</Body>
+            <Body tone="muted">
+              {formatNaira(hold.amountDueMinor)} · held until {until}
+            </Body>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </View>
+      </Card>
+    </Pressable>
+  );
 }
 
 function BookingRow({

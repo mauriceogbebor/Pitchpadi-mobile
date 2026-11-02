@@ -43,7 +43,13 @@ export default function VenueScreen() {
   const venue = venues.find((item) => item.id === venueId) ?? venues[0];
 
   const calendar = useQuery({
-    queryKey: ["calendar", venue?.id, date],
+    // Scoped to the account as well as the venue: see AuthProvider.
+    queryKey: [
+      "calendar",
+      auth.status === "signedIn" ? auth.me.user.id : null,
+      venue?.id,
+      date,
+    ],
     enabled: !!venue,
     queryFn: async () => {
       const response = await getOwnerCalendar(venue!.id, { date });

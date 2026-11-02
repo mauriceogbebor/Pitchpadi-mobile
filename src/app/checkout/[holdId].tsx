@@ -163,19 +163,32 @@ function awaitingPayment(hold: Hold) {
 }
 
 /** Opens the payment page: the in-app test page, or the provider in a browser. */
+/**
+ * Opens the payment page for an open payment: the in-app test screen when the
+ * API's test provider sent one, otherwise the provider's page in the in-app
+ * browser. Returns false when there is no page to open (the payment is not open,
+ * or the provider never gave a link), so the caller can say so instead.
+ */
 async function openPayment(payment: {
   attemptId: string;
+  status: string;
   checkoutUrl: string | null;
-}) {
-  if (!payment.checkoutUrl || payment.checkoutUrl.startsWith("/pay/test/")) {
+}): Promise<boolean> {
+  if (payment.status !== "checkout_open" || !payment.checkoutUrl) return false;
+  if (payment.checkoutUrl.startsWith("/pay/test/")) {
     router.push({
       pathname: "/pay/test/[attemptId]",
       params: { attemptId: payment.attemptId },
     });
-    return;
+    return true;
   }
+  if (!/^https:\/\//.test(payment.checkoutUrl)) return false;
   await WebBrowser.openBrowserAsync(payment.checkoutUrl);
+  return true;
 }
+
+const NO_PAYMENT_PAGE =
+  "The payment page did not open. Your time is still held; try again.";
 
 function LiveHold({
   hold,
@@ -190,6 +203,7 @@ function LiveHold({
   const day = dateParts(hold.localDate);
   const until = hold.expiresAt ? formatInstantTime(hold.expiresAt) : "";
   const [payAnotherWay, setPayAnotherWay] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
   const awaiting =
     awaitingPayment(hold) && !payAnotherWay ? hold.payment : null;
   const [releasing, setReleasing] = useState(false);
@@ -252,12 +266,23 @@ function LiveHold({
           <Heading level={3}>Paying by {METHOD_NAME[awaiting.method]}</Heading>
           <Body tone="muted">
             {awaiting.method === "bank_transfer"
-              ? "Bank transfers can take a few minutes to confirm. You can leave this screen and come back from My bookings."
+              ? "Bank transfers can take a few minutes to confirm. You can leave this screen: it stays under Not finished in My bookings until the payment lands."
               : "Already paid? Your booking shows here as soon as the payment is confirmed."}
           </Body>
+          {openError ? (
+            <Body tone="danger" accessibilityLiveRegion="assertive">
+              {openError}
+            </Body>
+          ) : null}
           <Button
             label="Open the payment page"
-            onPress={() => void openPayment(awaiting)}
+            onPress={async () => {
+              setOpenError(null);
+              if (!(await openPayment(awaiting))) {
+                setOpenError(NO_PAYMENT_PAGE);
+                onChanged();
+              }
+            }}
           />
           <Button
             variant="ghost"
@@ -327,7 +352,12 @@ function DetailsForm({
       if (response.status === 200 || response.status === 201) {
         const checkout: Checkout = response.data.checkout;
         onStarted();
-        await openPayment(checkout);
+        if (!(await openPayment(checkout))) {
+          // Never treat a payment without a page as started: the next try
+          // uses a new key, so it cannot replay this one.
+          key.current = null;
+          setError(NO_PAYMENT_PAGE);
+        }
         return;
       }
       const body = response.data as ErrorBody;

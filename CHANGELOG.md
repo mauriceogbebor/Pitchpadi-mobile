@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02 — M1 review fixes (0.2.1)
+
+- Signing in, signing out or an ended session clears all loaded data; Bookings and the venue calendar are cached per account.
+- Bookings: "Not finished" holds and payments, tapping through to checkout; the tab refreshes each time it is opened.
+- Checkout: opens a payment page only when there is one, and otherwise says so and retries with a new key.
+
 ## 2026-11-02 — M1 Play mode (0.2.0)
 
 - Book from the app: tap a pitch or a kick-off time on Play to open the pitch page with what the venue has, directions, the cancellation terms, 14 days of open times and the choice of length with prices.

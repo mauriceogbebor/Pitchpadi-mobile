@@ -49,6 +49,139 @@ export interface Me {
   organizations: Organization[];
 }
 
+export type HoldStatus = typeof HoldStatus[keyof typeof HoldStatus];
+
+
+export const HoldStatus = {
+  held: 'held',
+  pending_payment: 'pending_payment',
+  confirmed: 'confirmed',
+  completed: 'completed',
+  no_show: 'no_show',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
+  expired: 'expired',
+  payment_failed: 'payment_failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type HoldReleaseReason = typeof HoldReleaseReason[keyof typeof HoldReleaseReason] | null;
+
+
+export const HoldReleaseReason = {
+  expired: 'expired',
+  abandoned: 'abandoned',
+  payment_failed: 'payment_failed',
+} as const;
+
+export type HoldPitch = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  type: string;
+  facilityName: string;
+  areaName: string;
+  address: string;
+  /** @nullable */
+  landmark: string | null;
+  timeZone: string;
+};
+
+export type HoldCurrency = typeof HoldCurrency[keyof typeof HoldCurrency];
+
+
+export const HoldCurrency = {
+  NGN: 'NGN',
+} as const;
+
+export type HoldCancellationPolicy = {
+  label: string;
+  summary: string;
+};
+
+export type AttemptStatus = typeof AttemptStatus[keyof typeof AttemptStatus];
+
+
+export const AttemptStatus = {
+  checkout_open: 'checkout_open',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  expired: 'expired',
+  abandoned: 'abandoned',
+} as const;
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
+
+export const PaymentMethod = {
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+  ussd: 'ussd',
+} as const;
+
+/**
+ * @nullable
+ */
+export type HoldPayment = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  attemptId: string;
+  status: AttemptStatus;
+  method: PaymentMethod;
+  /** @nullable */
+  checkoutUrl: string | null;
+  deadlineAt: string;
+} | null;
+
+/**
+ * @nullable
+ */
+export type HoldBooking = {
+  reference: string;
+  confirmedAt: string;
+} | null;
+
+export interface Hold {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  reference: string;
+  status: HoldStatus;
+  /** @nullable */
+  expiresAt: string | null;
+  /** @nullable */
+  releaseReason: HoldReleaseReason;
+  paymentMethod: PaymentMethod | null;
+  pitch: HoldPitch;
+  startsAt: string;
+  endsAt: string;
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  durationMinutes: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountDueMinor: number;
+  currency: HoldCurrency;
+  cancellationPolicy: HoldCancellationPolicy;
+  /** @nullable */
+  payment: HoldPayment;
+  /** @nullable */
+  booking: HoldBooking;
+  serverNow: string;
+}
+
 export type PublicBookingPitch = {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
@@ -601,139 +734,6 @@ export interface PitchAvailability {
   startTimes: StartTime[];
 }
 
-export type HoldStatus = typeof HoldStatus[keyof typeof HoldStatus];
-
-
-export const HoldStatus = {
-  held: 'held',
-  pending_payment: 'pending_payment',
-  confirmed: 'confirmed',
-  completed: 'completed',
-  no_show: 'no_show',
-  cancelled: 'cancelled',
-  refunded: 'refunded',
-  expired: 'expired',
-  payment_failed: 'payment_failed',
-} as const;
-
-/**
- * @nullable
- */
-export type HoldReleaseReason = typeof HoldReleaseReason[keyof typeof HoldReleaseReason] | null;
-
-
-export const HoldReleaseReason = {
-  expired: 'expired',
-  abandoned: 'abandoned',
-  payment_failed: 'payment_failed',
-} as const;
-
-export type HoldPitch = {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  id: string;
-  name: string;
-  type: string;
-  facilityName: string;
-  areaName: string;
-  address: string;
-  /** @nullable */
-  landmark: string | null;
-  timeZone: string;
-};
-
-export type HoldCurrency = typeof HoldCurrency[keyof typeof HoldCurrency];
-
-
-export const HoldCurrency = {
-  NGN: 'NGN',
-} as const;
-
-export type HoldCancellationPolicy = {
-  label: string;
-  summary: string;
-};
-
-export type AttemptStatus = typeof AttemptStatus[keyof typeof AttemptStatus];
-
-
-export const AttemptStatus = {
-  checkout_open: 'checkout_open',
-  succeeded: 'succeeded',
-  failed: 'failed',
-  expired: 'expired',
-  abandoned: 'abandoned',
-} as const;
-
-export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
-
-
-export const PaymentMethod = {
-  card: 'card',
-  bank_transfer: 'bank_transfer',
-  ussd: 'ussd',
-} as const;
-
-/**
- * @nullable
- */
-export type HoldPayment = {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  attemptId: string;
-  status: AttemptStatus;
-  method: PaymentMethod;
-  /** @nullable */
-  checkoutUrl: string | null;
-  deadlineAt: string;
-} | null;
-
-/**
- * @nullable
- */
-export type HoldBooking = {
-  reference: string;
-  confirmedAt: string;
-} | null;
-
-export interface Hold {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  id: string;
-  reference: string;
-  status: HoldStatus;
-  /** @nullable */
-  expiresAt: string | null;
-  /** @nullable */
-  releaseReason: HoldReleaseReason;
-  paymentMethod: PaymentMethod | null;
-  pitch: HoldPitch;
-  startsAt: string;
-  endsAt: string;
-  localDate: string;
-  localStart: string;
-  localEnd: string;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  durationMinutes: number;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  amountMinor: number;
-  /**
-     * @minimum -9007199254740991
-     * @maximum 9007199254740991
-     */
-  amountDueMinor: number;
-  currency: HoldCurrency;
-  cancellationPolicy: HoldCancellationPolicy;
-  /** @nullable */
-  payment: HoldPayment;
-  /** @nullable */
-  booking: HoldBooking;
-  serverNow: string;
-}
-
 export const CreateHoldInputDurationMinutes = {  NUMBER_60: 60,
   NUMBER_90: 90,
   NUMBER_120: 120,
@@ -963,6 +963,7 @@ export type LogoutEverywhere200 = {
 };
 
 export type ListMyBookings200 = {
+  inProgress: Hold[];
   upcoming: PublicBooking[];
   past: PublicBooking[];
 };
@@ -1891,7 +1892,7 @@ export const getListMyBookingsUrl = () => {
 
 /**
  * Requires a signed-in user.
- * @summary The signed-in player's confirmed bookings: paid for while signed in, or booked with their verified phone number. Upcoming soonest first, then the 20 most recent past games
+ * @summary The signed-in player's bookings. inProgress: live holds and open payments they started while signed in (to return to checkout), soonest to expire first. upcoming/past: confirmed bookings paid for while signed in or booked with their verified phone number; upcoming soonest first, then the 20 most recent past games
  */
 export const listMyBookings = async ( options?: Parameters<typeof appFetch>[1]): Promise<listMyBookingsResponse> => {
 

@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getMe, logout, logoutEverywhere, type Me } from "@/api/generated";
 import { setSignedOutHandler } from "@/api/fetch";
 import { clearToken, readToken, saveToken } from "./token-store";
@@ -28,6 +29,14 @@ const AuthContext = createContext<Auth | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading" });
+  const queryClient = useQueryClient();
+  // Cached answers can hold one account's bookings, holds and venue calendars.
+  // Drop them whenever the account changes, so the next person on this phone
+  // never sees them, even for the moment a refresh takes.
+  const forgetAccountData = useCallback(() => {
+    void queryClient.cancelQueries();
+    queryClient.clear();
+  }, [queryClient]);
 
   const refresh = useCallback(async () => {
     const token = await readToken();
@@ -44,31 +53,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setSignedOutHandler(() => setState({ status: "signedOut" }));
+    setSignedOutHandler(() => {
+      forgetAccountData();
+      setState({ status: "signedOut" });
+    });
     // State changes only after reading secure storage and the network (async),
     // never synchronously during this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
     return () => setSignedOutHandler(null);
-  }, [refresh]);
+  }, [refresh, forgetAccountData]);
 
   const signIn = useCallback(
     async (token: string) => {
+      forgetAccountData();
       await saveToken(token);
       await refresh();
     },
-    [refresh],
+    [refresh, forgetAccountData],
   );
 
-  const signOut = useCallback(async (everywhere = false) => {
-    try {
-      await (everywhere ? logoutEverywhere() : logout());
-    } catch {
-      // Signing out on this phone must work offline; the server session expires.
-    }
-    await clearToken();
-    setState({ status: "signedOut" });
-  }, []);
+  const signOut = useCallback(
+    async (everywhere = false) => {
+      try {
+        await (everywhere ? logoutEverywhere() : logout());
+      } catch {
+        // Signing out on this phone must work offline; the server session expires.
+      }
+      await clearToken();
+      forgetAccountData();
+      setState({ status: "signedOut" });
+    },
+    [forgetAccountData],
+  );
 
   const value = useMemo(
     () => ({ ...state, signIn, signOut, refresh }),
