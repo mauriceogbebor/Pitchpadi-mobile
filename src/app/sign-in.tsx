@@ -8,8 +8,9 @@ import {
 } from "react-native";
 import { requestSignInCode, verifySignInCode } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
+import { PitchBand } from "@/components/pitch-band";
 import { Body, Button, Field, Heading, Notice, Screen } from "@/components/ui";
-import { space } from "@/theme/tokens";
+import { palette, space } from "@/theme/tokens";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 
@@ -97,11 +98,18 @@ export default function SignInScreen() {
       <Screen edges={["bottom"]}>
         {!challenge ? (
           <>
-            <Heading>Sign in with your phone</Heading>
-            <Body tone="muted">
-              We&apos;ll text you a 6-digit code. New to PitchPadi? The same
-              code creates your account.
-            </Body>
+            <PitchBand
+              markings="centre"
+              contentStyle={{ padding: space.xl, gap: space.sm }}
+            >
+              <Heading style={{ color: palette.white }}>
+                Sign in with your phone
+              </Heading>
+              <Body tone="onBandMuted">
+                We&apos;ll text you a 6-digit code. New to PitchPadi? The same
+                code creates your account.
+              </Body>
+            </PitchBand>
             <Field
               label="Phone number"
               value={phone}
@@ -126,8 +134,15 @@ export default function SignInScreen() {
           </>
         ) : (
           <>
-            <Heading>Enter the code</Heading>
-            <Body tone="muted">We sent a 6-digit code to {phone}.</Body>
+            <PitchBand
+              markings="centre"
+              contentStyle={{ padding: space.xl, gap: space.sm }}
+            >
+              <Heading style={{ color: palette.white }}>Enter the code</Heading>
+              <Body tone="onBandMuted" numeric>
+                We sent a 6-digit code to {phone}.
+              </Body>
+            </PitchBand>
             {challenge.devCode ? (
               <Notice title={`Development code: ${challenge.devCode}`}>
                 <Body tone="muted">Shown only while SMS is not connected.</Body>
@@ -148,7 +163,11 @@ export default function SignInScreen() {
               autoComplete="sms-otp"
               maxLength={6}
               error={error}
-              style={{ fontSize: 24, letterSpacing: 8 }}
+              style={{
+                fontSize: 26,
+                letterSpacing: 10,
+                fontVariant: ["tabular-nums"],
+              }}
             />
             <Button
               label="Sign in"

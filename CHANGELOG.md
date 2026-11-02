@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-02 — D3 Redesign: "Under the lights" (0.6.0)
+
+- A new look across the app: deep pitch-green bands with mowing stripes and chalk lines where it matters (Play, the pitch page, the hold, the booking, sign-in), quiet chalk-and-white elsewhere, and scoreboard figures for times, prices and references.
+- Play: a fixtures-style date strip on the band, "Your next game" or "Finish paying" at the top, area chips and a sliding time-of-day control, clearer pitch cards with kick-off "tickets". When nothing is left today, a button takes you to the next day.
+- Pitch page: venue band with directions, amenities, date strip, time tickets that pop when chosen, length cards, and a bottom bar that slides up with "Hold 5:00 pm".
+- Checkout: four steps (Time held, Your details, Payment, Booked), a big countdown with a draining bar, payment methods with icons, a clear "waiting for your payment" state.
+- The booking moment: the pitch lines draw themselves and a check lands on the centre spot, with a light buzz on phones. It plays once, only right after paying, and appears complete at once if the phone asks for less motion. The confirmation now opens at the top.
+- My bookings as a fixtures list (Not finished, Coming up, Earlier) with date blocks.
+- Venue: the day on a band with a scoreboard of bookings, paid and to collect; bookings as a timeline, coloured by what you need to do.
+- Account: a list of your venues and actions. Buttons and cards respond to presses; the tab bar shows the current tab with a pill.
+- Buttons now always announce their own label to screen readers (icons no longer leak into the name).
+
 ## 2026-11-02 — M4 Links and notifications (0.5.0)
 
 - Notifications: turn them on from Account, the Venue tab ("Know when a player books") or the booked screen ("Get a reminder before kick-off"). New bookings for venue members; confirmations and kick-off reminders for players. Tapping one opens the booking. Signing out stops them on this phone.

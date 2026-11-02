@@ -4,9 +4,9 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -22,15 +22,19 @@ import {
 } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
 import { BookedCard } from "@/components/booked-card";
+import { PitchBand } from "@/components/pitch-band";
+import { ProgressSteps } from "@/components/progress-steps";
 import { PushCard } from "@/components/push-card";
 import { HoldCountdown } from "@/components/hold-countdown";
 import {
   Body,
   Button,
   Card,
+  Divider,
   Field,
   Heading,
   Notice,
+  Press,
   Skeleton,
 } from "@/components/ui";
 import {
@@ -55,6 +59,11 @@ const METHODS: { value: PaymentMethod; label: string; hint: string }[] = [
   },
   { value: "ussd", label: "USSD", hint: "Dial a code on any phone" },
 ];
+const METHOD_ICON = {
+  card: "card-outline",
+  bank_transfer: "swap-horizontal-outline",
+  ussd: "keypad-outline",
+} as const;
 const METHOD_NAME: Record<PaymentMethod, string> = {
   card: "card",
   bank_transfer: "bank transfer",
@@ -109,6 +118,9 @@ export default function CheckoutScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
+          // A new scroll view when the booking lands, so the confirmation
+          // starts at the top instead of where the payment form was.
+          key={booked ? "booked" : "checkout"}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
@@ -130,6 +142,7 @@ export default function CheckoutScreen() {
             </Notice>
           ) : booked ? (
             <>
+              <ProgressSteps current={3} />
               <BookedCard
                 booking={{
                   reference: hold.data.booking!.reference,
@@ -140,7 +153,7 @@ export default function CheckoutScreen() {
                   amountMinor: hold.data.amountDueMinor,
                 }}
                 policy={hold.data.cancellationPolicy}
-                celebrate
+                celebrate={justBooked(hold.data)}
               />
               <PushCard
                 variant="prompt"
@@ -156,6 +169,16 @@ export default function CheckoutScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/** Confirmed in the last two minutes (server clock): celebrate; older: just show it. */
+function justBooked(hold: Hold) {
+  if (!hold.booking) return false;
+  return (
+    new Date(hold.serverNow).getTime() -
+      new Date(hold.booking.confirmedAt).getTime() <
+    2 * 60_000
   );
 }
 
@@ -233,45 +256,61 @@ function LiveHold({
 
   return (
     <>
-      <View style={[styles.hero, { backgroundColor: "#0B3D2E" }]}>
-        <Heading style={{ color: "#FFFFFF" }} level={2}>
+      <ProgressSteps current={awaiting ? 2 : 1} />
+      <PitchBand markings="centre">
+        <Heading level={2} style={{ color: colors.onBand }}>
           {awaiting ? "Waiting for your payment" : "Your time is held"}
         </Heading>
-        <Body tone="onPrimary" style={{ color: "#E6F2EA" }} size={14}>
-          Payments are in test mode. No real money moves.
-        </Body>
         <HoldCountdown
           expiresAt={hold.expiresAt!}
           serverNow={hold.serverNow}
           onEnd={onEnd}
-          color="#FFFFFF"
+          color={colors.onBand}
         />
-        <Body style={{ color: "#E6F2EA" }}>
+        <Body tone="onBandMuted">
           {awaiting
             ? `Finish paying by ${until} and ${hold.localStart} on ${day.long} is yours. This screen updates by itself when the payment arrives.`
             : `Nobody else can book ${hold.localStart} on ${day.long} until ${until}.`}
         </Body>
-      </View>
+        <View style={styles.testMode}>
+          <Ionicons name="flask-outline" size={15} color={colors.onBandMuted} />
+          <Body tone="onBandMuted" size={13}>
+            Test mode: no real money moves.
+          </Body>
+        </View>
+      </PitchBand>
 
       <Card>
         <Heading level={3}>{hold.pitch.facilityName}</Heading>
         <Body tone="muted">
-          {hold.pitch.name}, {hold.pitch.type}. {hold.pitch.areaName}
+          {hold.pitch.name}, {hold.pitch.type}, {hold.pitch.areaName}
         </Body>
+        <Divider />
         <Row label="When">
           {day.long}, {hold.localStart} to {hold.localEnd} (
           {formatDuration(hold.durationMinutes)})
         </Row>
-        <Row label="To pay now">{formatNaira(hold.amountDueMinor)}</Row>
+        <Row label="To pay now">
+          <Body weight="bold" size={19} numeric>
+            {formatNaira(hold.amountDueMinor)}
+          </Body>
+        </Row>
         <Row label="If plans change">
           {hold.cancellationPolicy.label}.{" "}
-          <Body weight="body">{hold.cancellationPolicy.summary}</Body>
+          <Body weight="body" tone="muted">
+            {hold.cancellationPolicy.summary}
+          </Body>
         </Row>
       </Card>
 
       {awaiting ? (
         <View style={{ gap: space.md }}>
-          <Heading level={3}>Paying by {METHOD_NAME[awaiting.method]}</Heading>
+          <View style={styles.waiting}>
+            <ActivityIndicator color={colors.link} />
+            <Heading level={3} style={{ flex: 1 }}>
+              Paying by {METHOD_NAME[awaiting.method]}
+            </Heading>
+          </View>
           <Body tone="muted">
             {awaiting.method === "bank_transfer"
               ? "Bank transfers can take a few minutes to confirm. You can leave this screen: it stays under Not finished in My bookings until the payment lands."
@@ -309,7 +348,7 @@ function LiveHold({
         />
       )}
 
-      <Pressable
+      <Press
         onPress={changeTime}
         disabled={releasing}
         accessibilityRole="button"
@@ -319,7 +358,7 @@ function LiveHold({
         <Body tone="link" weight="semibold">
           {releasing ? "Letting this time go…" : "Choose a different time"}
         </Body>
-      </Pressable>
+      </Press>
     </>
   );
 }
@@ -427,7 +466,7 @@ function DetailsForm({
         {METHODS.map((item) => {
           const selected = item.value === method;
           return (
-            <Pressable
+            <Press
               key={item.value}
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
@@ -437,23 +476,31 @@ function DetailsForm({
                 styles.method,
                 {
                   backgroundColor: colors.card,
-                  borderColor: selected ? colors.primary : colors.border,
+                  borderColor: selected ? colors.borderStrong : colors.border,
                   borderWidth: selected ? 2 : 1,
+                  paddingHorizontal: selected ? space.md - 1 : space.md,
                 },
               ]}
             >
-              <Ionicons
-                name={selected ? "radio-button-on" : "radio-button-off"}
-                size={22}
-                color={selected ? colors.link : colors.textMuted}
-              />
+              <View
+                style={[
+                  styles.methodIcon,
+                  { backgroundColor: selected ? colors.chosen : colors.muted },
+                ]}
+              >
+                <Ionicons
+                  name={METHOD_ICON[item.value]}
+                  size={20}
+                  color={selected ? colors.onChosen : colors.textMuted}
+                />
+              </View>
               <View style={{ flex: 1 }}>
                 <Body weight="semibold">{item.label}</Body>
                 <Body tone="muted" size={14}>
                   {item.hint}
                 </Body>
               </View>
-            </Pressable>
+            </Press>
           );
         })}
         {errors.method ? <Body tone="danger">{errors.method}</Body> : null}
@@ -527,7 +574,15 @@ function Row({
 
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
-  hero: { borderRadius: radius.lg, padding: space.xl, gap: space.sm },
+  testMode: { flexDirection: "row", alignItems: "center", gap: 6 },
+  waiting: { flexDirection: "row", alignItems: "center", gap: space.md },
+  methodIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   method: {
     flexDirection: "row",
     alignItems: "center",

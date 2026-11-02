@@ -7,7 +7,7 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   listFacilities,
   requestVenueReview,
@@ -21,6 +21,7 @@ import {
   Card,
   Heading,
   Notice,
+  Press,
   Screen,
   Skeleton,
 } from "@/components/ui";
@@ -326,15 +327,12 @@ function PitchRow({
   const colors = useColors();
   const live = pitch.public_status === "published";
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityLabel={`${pitch.pitch_name}, ${pitch.pitch_type}. ${live ? "Live" : pitch.has_schedule ? "Private" : "No hours yet"}. Hours and prices`}
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.pitch,
-        { borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-      ]}
+      style={[styles.pitch, { borderColor: colors.border }]}
     >
       <View style={{ flex: 1, gap: 4 }}>
         <Body weight="semibold" size={17}>
@@ -359,7 +357,7 @@ function PitchRow({
           <Ionicons name="chevron-forward" size={18} color={colors.link} />
         </View>
       )}
-    </Pressable>
+    </Press>
   );
 }
 

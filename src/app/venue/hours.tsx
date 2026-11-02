@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -28,6 +27,7 @@ import {
   Field,
   Heading,
   Notice,
+  Press,
   Skeleton,
 } from "@/components/ui";
 import { formatDuration, formatLocalTime } from "@/lib/format";
@@ -293,7 +293,7 @@ function Editor({
                 <Body weight="bold" size={17} style={{ flex: 1 }}>
                   {WEEKDAYS[weekday]}
                 </Body>
-                <Pressable
+                <Press
                   accessibilityRole="switch"
                   accessibilityState={{ checked: row.enabled }}
                   aria-checked={row.enabled}
@@ -314,7 +314,7 @@ function Editor({
                   >
                     {row.enabled ? "Open" : "Closed"}
                   </Body>
-                </Pressable>
+                </Press>
               </View>
               {row.enabled && (
                 <View style={styles.times}>
@@ -349,7 +349,7 @@ function Editor({
               <Body weight="bold" size={17} style={{ flex: 1 }}>
                 {formatDuration(row.durationMinutes)}
               </Body>
-              <Pressable
+              <Press
                 accessibilityRole="switch"
                 accessibilityState={{ checked: row.enabled }}
                 aria-checked={row.enabled}
@@ -377,7 +377,7 @@ function Editor({
                 >
                   {row.enabled ? "Offered" : "Not offered"}
                 </Body>
-              </Pressable>
+              </Press>
             </View>
             {row.enabled && (
               <Field
@@ -414,7 +414,7 @@ function Editor({
         {policies.map((policy) => {
           const selected = policy.id === policyId;
           return (
-            <Pressable
+            <Press
               key={policy.id}
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
@@ -443,7 +443,7 @@ function Editor({
                   {policy.summary}
                 </Body>
               </View>
-            </Pressable>
+            </Press>
           );
         })}
 
@@ -527,21 +527,20 @@ function TimeStepper({
   const colors = useColors();
   const display = minute === 1440 ? "Midnight" : formatLocalTime(minute);
   const button = (by: number, icon: "remove" | "add", hint: string) => (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityLabel={`${hint}, ${day} ${label.toLowerCase()}`}
       onPress={() => onChange(stepMinute(minute, by, min, max))}
-      style={({ pressed }) => [
+      style={[
         styles.step,
         {
           borderColor: colors.border,
           backgroundColor: colors.background,
-          opacity: pressed ? 0.8 : 1,
         },
       ]}
     >
       <Ionicons name={icon} size={22} color={colors.text} />
-    </Pressable>
+    </Press>
   );
   return (
     <View style={styles.stepRow}>

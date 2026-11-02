@@ -1,24 +1,21 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CalendarEntry } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
 import { Chip, ChipRow } from "@/components/chips";
+import { PitchBand } from "@/components/pitch-band";
 import {
   Body,
   Button,
   Card,
   Heading,
   Notice,
+  Press,
   Screen,
+  Section,
   Skeleton,
 } from "@/components/ui";
 import {
@@ -32,7 +29,7 @@ import {
 import { PushCard } from "@/components/push-card";
 import { StatusPill } from "@/components/status-pill";
 import { CHANNEL_NOTE, entryStatus, useVenueCalendar } from "@/lib/venue";
-import { radius, space, TAP } from "@/theme/tokens";
+import { palette, radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
 /** Venue mode: one day of bookings for the venue you run, and adding bookings. */
@@ -117,6 +114,14 @@ export default function VenueScreen() {
       params: { reservationId: entry.id, organizationId: venue.id, date },
     });
 
+  const tone = (entry: CalendarEntry) => entryStatus(entry).tone;
+  const barColor = {
+    paid: colors.success,
+    collect: palette.clay,
+    pending: colors.textMuted,
+    off: colors.border,
+  };
+
   return (
     <SafeAreaView
       edges={["top"]}
@@ -131,18 +136,22 @@ export default function VenueScreen() {
           />
         }
       >
-        <View style={{ gap: space.xs }}>
-          <Heading>{venue.name}</Heading>
+        <PitchBand markings="none" contentStyle={styles.bandContent}>
           <View style={styles.roleRow}>
-            <Body tone="muted">
-              {venue.role === "owner" ? "Owner" : "Staff"}
-              {venue.status !== "approved"
-                ? venue.status === "rejected"
-                  ? " · Needs changes"
-                  : " · In review"
-                : ""}
-            </Body>
-            <Pressable
+            <View style={{ flex: 1, gap: 2 }}>
+              <Heading level={2} style={{ color: colors.onBand }}>
+                {venue.name}
+              </Heading>
+              <Body tone="onBandMuted" size={14}>
+                {venue.role === "owner" ? "Owner" : "Staff"}
+                {venue.status !== "approved"
+                  ? venue.status === "rejected"
+                    ? ", needs changes"
+                    : ", in review"
+                  : ""}
+              </Body>
+            </View>
+            <Press
               accessibilityRole="button"
               onPress={() =>
                 router.push({
@@ -150,14 +159,85 @@ export default function VenueScreen() {
                   params: { organizationId: venue.id },
                 })
               }
-              hitSlop={10}
+              hitSlop={6}
+              style={styles.manage}
             >
-              <Body tone="link" weight="semibold">
-                {venue.role === "owner" ? "Manage venue" : "Venue setup"}
+              <Ionicons
+                name="settings-outline"
+                size={18}
+                color={colors.onBand}
+              />
+              <Body weight="semibold" size={14} tone="onBand">
+                {venue.role === "owner" ? "Manage" : "Setup"}
               </Body>
-            </Pressable>
+            </Press>
           </View>
-        </View>
+
+          <View style={styles.dayRow}>
+            <DayButton
+              icon="chevron-back"
+              label="Previous day"
+              onPress={() => setDate(addDays(date, -1))}
+            />
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <Body
+                weight="bold"
+                size={19}
+                tone="onBand"
+                accessibilityLiveRegion="polite"
+              >
+                {date === today
+                  ? "Today"
+                  : `${day.weekday} ${day.day} ${day.month}`}
+              </Body>
+              {date !== today ? (
+                <Press
+                  onPress={() => setDate(today)}
+                  accessibilityRole="button"
+                  hitSlop={10}
+                >
+                  <Body
+                    weight="semibold"
+                    size={14}
+                    style={{ color: palette.volt }}
+                  >
+                    Back to today
+                  </Body>
+                </Press>
+              ) : (
+                <Body tone="onBandMuted" size={14}>
+                  {day.long}
+                </Body>
+              )}
+            </View>
+            <DayButton
+              icon="chevron-forward"
+              label="Next day"
+              onPress={() => setDate(addDays(date, 1))}
+            />
+          </View>
+
+          {summary ? (
+            <View
+              style={styles.totals}
+              accessible
+              accessibilityLabel={`${summary.bookings} ${summary.bookings === 1 ? "booking" : "bookings"}, ${formatNaira(summary.paidMinor)} paid, ${formatNaira(summary.unpaidMinor)} to collect`}
+            >
+              <Total
+                label={summary.bookings === 1 ? "booking" : "bookings"}
+                value={String(summary.bookings)}
+                narrow
+              />
+              <Total label="paid" value={formatNaira(summary.paidMinor)} />
+              <Total
+                label="to collect"
+                value={formatNaira(summary.unpaidMinor)}
+                attention={summary.unpaidMinor > 0}
+              />
+            </View>
+          ) : null}
+        </PitchBand>
+
         {venues.length > 1 && (
           <ChipRow label="Venue">
             {venues.map((item) => (
@@ -171,47 +251,8 @@ export default function VenueScreen() {
           </ChipRow>
         )}
 
-        <View style={styles.dayRow}>
-          <DayButton
-            icon="chevron-back"
-            label="Previous day"
-            onPress={() => setDate(addDays(date, -1))}
-          />
-          <View style={{ flex: 1, alignItems: "center" }}>
-            <Heading level={3} accessibilityLiveRegion="polite">
-              {date === today
-                ? "Today"
-                : `${day.weekday} ${day.day} ${day.month}`}
-            </Heading>
-            {date !== today ? (
-              <Pressable
-                onPress={() => setDate(today)}
-                accessibilityRole="button"
-                hitSlop={8}
-              >
-                <Body tone="link" weight="semibold" size={14}>
-                  Back to today
-                </Body>
-              </Pressable>
-            ) : (
-              <Body tone="muted" size={14}>
-                {day.long}
-              </Body>
-            )}
-          </View>
-          <DayButton
-            icon="chevron-forward"
-            label="Next day"
-            onPress={() => setDate(addDays(date, 1))}
-          />
-        </View>
-
-        <PushCard
-          variant="prompt"
-          title="Know when a player books"
-          detail="Get a notification on this phone for every new online booking."
-        />
         <Button
+          icon="add"
           label="Add booking"
           onPress={() =>
             router.push({
@@ -221,9 +262,14 @@ export default function VenueScreen() {
           }
           accessibilityHint="Record a phone, WhatsApp or walk-in booking"
         />
+        <PushCard
+          variant="prompt"
+          title="Know when a player books"
+          detail="Get a notification on this phone for every new online booking."
+        />
 
         {calendar.isPending ? (
-          <Skeleton height={110} />
+          <Skeleton height={84} count={3} />
         ) : calendar.isError ? (
           <Notice
             tone="danger"
@@ -240,59 +286,55 @@ export default function VenueScreen() {
           </Notice>
         ) : (
           data &&
-          summary && (
-            <>
-              <View style={styles.totals}>
-                <Total
-                  label={summary.bookings === 1 ? "booking" : "bookings"}
-                  value={String(summary.bookings)}
-                  narrow
-                />
-                <Total label="paid" value={formatNaira(summary.paidMinor)} />
-                <Total
-                  label="to collect"
-                  value={formatNaira(summary.unpaidMinor)}
-                  attention={summary.unpaidMinor > 0}
-                />
-              </View>
-              {data.entries.length === 0 ? (
-                <Notice title="No bookings on this day yet">
-                  <Body tone="muted">
-                    Online bookings appear here with the player&apos;s phone
-                    number. Add phone and walk-in bookings with &quot;Add
-                    booking&quot;.
-                  </Body>
-                </Notice>
-              ) : (
-                data.pitches
-                  .filter((pitch) =>
-                    data.entries.some((entry) => entry.pitchId === pitch.id),
-                  )
-                  .map((pitch) => (
-                    <View key={pitch.id} style={{ gap: space.sm }}>
-                      <Body weight="semibold" tone="muted">
-                        {pitch.facilityName} · {pitch.name}
-                      </Body>
-                      {data.entries
-                        .filter((entry) => entry.pitchId === pitch.id)
-                        .map((entry) => (
-                          <EntryRow
-                            key={entry.id}
-                            entry={entry}
-                            onPress={() => openDetails(entry)}
-                          />
-                        ))}
-                    </View>
-                  ))
-              )}
-            </>
-          )
+          (data.entries.length === 0 ? (
+            <Card variant="flat" style={{ gap: space.xs }}>
+              <Body weight="semibold">No bookings on this day yet</Body>
+              <Body tone="muted">
+                Online bookings appear here with the player&apos;s phone number.
+                Add phone and walk-in bookings with &quot;Add booking&quot;.
+              </Body>
+            </Card>
+          ) : (
+            data.pitches
+              .filter((pitch) =>
+                data.entries.some((entry) => entry.pitchId === pitch.id),
+              )
+              .map((pitch) => (
+                <Section key={pitch.id} title={`${pitch.name}`}>
+                  {data.pitches.some(
+                    (other) => other.facilityName !== pitch.facilityName,
+                  ) ? (
+                    <Body
+                      tone="muted"
+                      size={14}
+                      style={{ marginTop: -space.sm }}
+                    >
+                      {pitch.facilityName}
+                    </Body>
+                  ) : null}
+                  <View>
+                    {data.entries
+                      .filter((entry) => entry.pitchId === pitch.id)
+                      .map((entry, index, list) => (
+                        <EntryRow
+                          key={entry.id}
+                          entry={entry}
+                          bar={barColor[tone(entry)]}
+                          last={index === list.length - 1}
+                          onPress={() => openDetails(entry)}
+                        />
+                      ))}
+                  </View>
+                </Section>
+              ))
+          ))
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+/** Previous and next day, on the band. */
 function DayButton({
   icon,
   label,
@@ -304,24 +346,18 @@ function DayButton({
 }) {
   const colors = useColors();
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.dayButton,
-        {
-          borderColor: colors.border,
-          backgroundColor: colors.card,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}
+      style={styles.dayButton}
     >
-      <Ionicons name={icon} size={22} color={colors.text} />
-    </Pressable>
+      <Ionicons name={icon} size={22} color={colors.onBand} />
+    </Press>
   );
 }
 
+/** One number on the day's scoreboard. */
 function Total({
   label,
   value,
@@ -334,44 +370,43 @@ function Total({
   /** For the booking count, so the money boxes get the room. */
   narrow?: boolean;
 }) {
-  const colors = useColors();
   return (
-    <View
-      style={[
-        styles.total,
-        { flex: narrow ? 0.7 : 1 },
-        {
-          backgroundColor: attention ? colors.warningSoft : colors.card,
-          borderColor: attention ? colors.warningSoft : colors.border,
-        },
-      ]}
-    >
+    <View style={[styles.total, { flex: narrow ? 0.6 : 1 }]}>
       <Body
         weight="bold"
-        size={17}
+        size={19}
+        numeric
+        tone="onBand"
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.7}
-        style={attention ? { color: colors.warningText } : undefined}
       >
         {value}
       </Body>
-      <Body
-        tone="muted"
-        size={13}
-        style={attention ? { color: colors.warningText } : undefined}
-      >
-        {label}
-      </Body>
+      <View style={styles.totalLabel}>
+        {attention ? <View style={styles.collectDot} /> : null}
+        <Body tone="onBandMuted" size={13}>
+          {label}
+        </Body>
+      </View>
     </View>
   );
 }
 
+/**
+ * One booking on the day's timeline: the time in the gutter, then a block
+ * whose edge is coloured by what the venue must do (paid, to collect, being
+ * paid online, cancelled).
+ */
 function EntryRow({
   entry,
+  bar,
+  last,
   onPress,
 }: {
   entry: CalendarEntry;
+  bar: string;
+  last: boolean;
   onPress: () => void;
 }) {
   const colors = useColors();
@@ -382,67 +417,130 @@ function EntryRow({
         ? `Held until ${formatInstantTime(entry.holdExpiresAt)}`
         : "Being paid online"
       : (entry.customer?.name ?? "");
+  const off = entry.kind === "cancelled";
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${entry.localStart} to ${entry.localEnd}, ${who}, ${status.label}. Open booking`}
-      onPress={onPress}
-      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
-    >
-      <Card
-        style={{
-          ...(entry.kind === "hold" ? { borderStyle: "dashed" as const } : {}),
-          ...(entry.kind === "cancelled" ? { opacity: 0.7 } : {}),
-        }}
-      >
-        <View style={styles.entryTop}>
-          <Body weight="bold" size={20} style={{ flex: 1 }}>
-            {entry.localStart}
-            <Body tone="muted"> to {entry.localEnd}</Body>
-          </Body>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </View>
-        <StatusPill tone={status.tone} label={status.label} />
-        <Body weight="semibold" size={17}>
-          {who}
+    <View style={styles.slot}>
+      <View style={styles.gutter}>
+        <Body weight="bold" numeric tone={off ? "muted" : undefined}>
+          {entry.localStart}
         </Body>
-        {entry.kind !== "hold" && (
-          <Body tone="muted">
-            {entry.source === "manual"
-              ? CHANNEL_NOTE[entry.channel ?? "other"]
-              : "Booked online"}{" "}
-            · {formatNaira(entry.amountMinor)} ·{" "}
-            {formatDuration(entry.durationMinutes)}
-          </Body>
-        )}
-      </Card>
-    </Pressable>
+        <Body tone="muted" size={13} numeric>
+          {entry.localEnd}
+        </Body>
+        {!last ? (
+          <View style={[styles.rail, { backgroundColor: colors.border }]} />
+        ) : null}
+      </View>
+      <Press
+        scaleTo={0.985}
+        accessibilityRole="button"
+        accessibilityLabel={`${entry.localStart} to ${entry.localEnd}, ${who}, ${status.label}. Open booking`}
+        onPress={onPress}
+        style={{ flex: 1, paddingBottom: last ? 0 : space.md }}
+      >
+        <View
+          style={[
+            styles.block,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              borderLeftColor: bar,
+              borderStyle: entry.kind === "hold" ? "dashed" : "solid",
+              opacity: off ? 0.7 : 1,
+            },
+          ]}
+        >
+          <View style={styles.entryTop}>
+            <Body
+              weight="semibold"
+              size={17}
+              numberOfLines={1}
+              style={{
+                flex: 1,
+                textDecorationLine: off ? "line-through" : "none",
+              }}
+            >
+              {who}
+            </Body>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textMuted}
+            />
+          </View>
+          <StatusPill tone={status.tone} label={status.label} />
+          {entry.kind !== "hold" && (
+            <Body tone="muted" size={14} numeric>
+              {entry.source === "manual"
+                ? CHANNEL_NOTE[entry.channel ?? "other"]
+                : "Booked online"}
+              , {formatNaira(entry.amountMinor)},{" "}
+              {formatDuration(entry.durationMinutes)}
+            </Body>
+          )}
+        </View>
+      </Press>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
-  dayRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  bandContent: { padding: space.lg, gap: space.lg },
   roleRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: space.md,
   },
+  manage: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: space.md,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  dayRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   dayButton: {
     width: TAP,
     height: TAP,
     borderRadius: radius.md,
-    borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
   },
-  totals: { flexDirection: "row", gap: space.sm },
-  total: {
-    borderRadius: radius.md,
+  totals: {
+    flexDirection: "row",
+    gap: space.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.18)",
+    paddingTop: space.md,
+  },
+  total: { gap: 2 },
+  totalLabel: { flexDirection: "row", alignItems: "center", gap: 6 },
+  collectDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: palette.clay,
+  },
+  slot: { flexDirection: "row", gap: space.md },
+  gutter: { width: 78, paddingTop: space.md, alignItems: "flex-start" },
+  rail: {
+    position: "absolute",
+    left: 2,
+    top: 62,
+    bottom: 4,
+    width: 2,
+    borderRadius: 1,
+  },
+  block: {
     borderWidth: 1,
-    paddingVertical: space.sm,
-    paddingHorizontal: space.md,
+    borderLeftWidth: 5,
+    borderRadius: radius.md,
+    padding: space.md,
+    gap: space.sm,
   },
   entryTop: { flexDirection: "row", alignItems: "center", gap: space.sm },
 });

@@ -1,8 +1,15 @@
-import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Body } from "@/components/ui";
-import { palette, radius, space, TAP } from "@/theme/tokens";
-import { useColors, useIsDark } from "@/theme/use-theme";
+import { useEffect, type ReactNode } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { Body, Press } from "@/components/ui";
+import { radius, space, TAP } from "@/theme/tokens";
+import { useColors } from "@/theme/use-theme";
 
 /** A labelled, sideways-scrolling row of choices. */
 export function ChipRow({
@@ -27,7 +34,7 @@ export function ChipRow({
   );
 }
 
-/** One choice in a ChipRow. */
+/** One choice in a row of filters. */
 export function Chip({
   label,
   selected,
@@ -41,11 +48,13 @@ export function Chip({
 }) {
   const colors = useColors();
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      aria-selected={selected}
       accessibilityLabel={accessibilityLabel ?? label}
       onPress={onPress}
+      hitSlop={2}
       style={[
         styles.chip,
         {
@@ -54,14 +63,21 @@ export function Chip({
         },
       ]}
     >
-      <Body weight="semibold" tone={selected ? "onPrimary" : "default"}>
+      <Body
+        weight="semibold"
+        size={15}
+        tone={selected ? "onPrimary" : "default"}
+      >
         {label}
       </Body>
-    </Pressable>
+    </Press>
   );
 }
 
-/** A kick-off time: solid when open to pick, outlined when chosen elsewhere. */
+/**
+ * A kick-off time, like a ticket: outlined at rest, so a list of times stays
+ * light. The chosen time fills in and gives a small pop (not with reduced motion).
+ */
 export function TimeChip({
   label,
   selected = false,
@@ -74,33 +90,45 @@ export function TimeChip({
   accessibilityLabel?: string;
 }) {
   const colors = useColors();
-  const dark = useIsDark();
-  // Chosen: lime on light, white on dark (where open times are already lime).
-  const chosenBackground = dark ? palette.white : palette.volt;
+  const reduce = useReducedMotion();
+  const pop = useSharedValue(1);
+  useEffect(() => {
+    if (selected && !reduce)
+      pop.set(
+        withSequence(
+          withTiming(1.06, { duration: 110 }),
+          withTiming(1, { duration: 140 }),
+        ),
+      );
+  }, [selected, reduce, pop]);
+  const animated = useAnimatedStyle(() => ({
+    transform: [{ scale: pop.value }],
+  }));
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={accessibilityLabel ?? label}
-      onPress={onPress}
-      hitSlop={4}
-      style={({ pressed }) => [
-        styles.time,
-        {
-          backgroundColor: selected ? chosenBackground : colors.primary,
-          borderColor: selected ? colors.text : colors.primary,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}
-    >
-      <Body
-        weight="semibold"
-        tone={selected ? "default" : "onPrimary"}
-        style={selected ? { color: palette.night } : undefined}
+    <Animated.View style={animated}>
+      <Press
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        aria-selected={selected}
+        accessibilityLabel={accessibilityLabel ?? label}
+        onPress={onPress}
+        style={[
+          styles.time,
+          {
+            backgroundColor: selected ? colors.chosen : colors.card,
+            borderColor: selected ? colors.chosen : colors.border,
+          },
+        ]}
       >
-        {label}
-      </Body>
-    </Pressable>
+        <Body
+          weight="semibold"
+          numeric
+          style={{ color: selected ? colors.onChosen : colors.text }}
+        >
+          {label}
+        </Body>
+      </Press>
+    </Animated.View>
   );
 }
 
@@ -113,10 +141,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   time: {
-    borderRadius: radius.sm,
-    borderWidth: 2,
+    minHeight: TAP,
+    minWidth: 92,
+    borderRadius: radius.md,
+    borderWidth: 1,
     paddingHorizontal: space.md,
-    minHeight: 44,
+    alignItems: "center",
     justifyContent: "center",
   },
 });

@@ -1,11 +1,12 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, View } from "react-native";
 import Animated, {
+  FadeIn,
   FadeInDown,
   useReducedMotion,
-  ZoomIn,
 } from "react-native-reanimated";
-import { Body, Button, Heading } from "@/components/ui";
+import { BookedMark } from "@/components/booked-mark";
+import { PitchBand } from "@/components/pitch-band";
+import { Body, Button, Card, Divider, Heading } from "@/components/ui";
 import { dateParts, formatNaira } from "@/lib/format";
 import {
   gameOnText,
@@ -13,7 +14,7 @@ import {
   placeLine,
   shareOnWhatsApp,
 } from "@/lib/links";
-import { fonts, palette, radius, space } from "@/theme/tokens";
+import { fonts, palette, space } from "@/theme/tokens";
 
 export type BookedGame = {
   reference: string;
@@ -39,9 +40,10 @@ const STATUS_NOTE: Record<string, string> = {
 };
 
 /**
- * The booking on the pitch-green card: the reference to show at the pitch, when,
- * where (with directions), what was paid, and sharing with the team. With
- * `celebrate`, the check mark lands once, unless the phone asks for less motion.
+ * The booking: on the pitch band, the reference to show at the pitch; then
+ * when, where (with directions), what was paid and the terms, and sharing
+ * with the team. With `celebrate`, the pitch lines draw and the reference
+ * rises once (BookedMark), unless the phone asks for less motion.
  */
 export function BookedCard({
   booking,
@@ -55,96 +57,101 @@ export function BookedCard({
   /** Opened from a team link: a teammate, not necessarily who booked it. */
   shared?: boolean;
 }) {
-  const reduceMotion = useReducedMotion();
-  const animate = celebrate && !reduceMotion;
+  const reduce = useReducedMotion();
+  const animate = celebrate && !reduce;
   const day = dateParts(booking.localDate);
   const note = booking.status ? STATUS_NOTE[booking.status] : undefined;
   const active = !note;
+  const rise = (delay: number) =>
+    animate ? FadeInDown.delay(delay).duration(320) : undefined;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.top}>
-        <Animated.View
-          entering={animate ? ZoomIn.springify().damping(12) : undefined}
-          style={styles.mark}
-          accessible={false}
-        >
-          <Ionicons name="checkmark" size={30} color={palette.night} />
+    <View style={{ gap: space.lg }}>
+      <PitchBand markings="none" contentStyle={styles.bandContent}>
+        <View style={styles.top}>
+          <BookedMark celebrate={celebrate && active} />
+          <Animated.View entering={rise(650)} style={{ flex: 1, gap: 2 }}>
+            <Heading level={2} style={{ color: palette.white }}>
+              {!active ? "Your booking" : shared ? "Game on" : "You're booked"}
+            </Heading>
+            <Body tone="onBandMuted">
+              {note ?? `${day.long}, ${booking.localStart}`}
+            </Body>
+          </Animated.View>
+        </View>
+        <Animated.View entering={rise(780)} style={styles.reference}>
+          <Body tone="onBandMuted" size={14}>
+            Show this reference at the pitch
+          </Body>
+          <Body
+            selectable
+            numeric
+            style={styles.code}
+            accessibilityLabel={`Reference ${booking.reference.split("").join(" ")}`}
+          >
+            {booking.reference}
+          </Body>
         </Animated.View>
-        <Animated.View
-          entering={animate ? FadeInDown.delay(250).duration(400) : undefined}
-          style={{ flex: 1 }}
-        >
-          <Heading style={styles.white}>
-            {!active ? "Your booking" : shared ? "Game on" : "You're booked"}
-          </Heading>
-        </Animated.View>
-      </View>
-
-      {note ? (
-        <Body style={styles.soft}>{note}</Body>
-      ) : (
-        <Body style={styles.soft} size={17}>
-          Show this reference at the pitch.
-        </Body>
-      )}
-      <Body
-        selectable
-        style={styles.reference}
-        accessibilityLabel={`Reference ${booking.reference.split("").join(" ")}`}
-      >
-        {booking.reference}
-      </Body>
-
-      <View style={styles.details}>
-        <Detail label="When">
-          {day.long}, {booking.localStart} to {booking.localEnd}
-        </Detail>
-        <Detail label="Paid">{formatNaira(booking.amountMinor)}</Detail>
-        <Detail label="Where">
-          {booking.pitch.facilityName}, {booking.pitch.name}
-          {"\n"}
-          <Body style={styles.soft}>{placeLine(booking.pitch)}</Body>
-        </Detail>
-        {policy ? (
-          <Detail label="If plans change">
-            {policy.label}. <Body style={styles.soft}>{policy.summary}</Body>
-          </Detail>
-        ) : null}
-      </View>
-
-      <View style={{ gap: space.sm }}>
         {active && (
-          <Button
-            label="Tell the team on WhatsApp"
-            onPress={() =>
-              void shareOnWhatsApp(
-                gameOnText({ ...booking, dayLabel: day.long }),
-              )
-            }
-            style={{ backgroundColor: palette.volt, borderColor: palette.volt }}
-            textColor={palette.night}
-          />
+          <Animated.View entering={rise(900)}>
+            <Button
+              variant="onBand"
+              icon="logo-whatsapp"
+              label="Share on WhatsApp"
+              accessibilityLabel="Share with the team on WhatsApp"
+              onPress={() =>
+                void shareOnWhatsApp(
+                  gameOnText({ ...booking, dayLabel: day.long }),
+                )
+              }
+            />
+          </Animated.View>
         )}
-        <Button
-          variant="outline"
-          label="Get directions"
-          onPress={() =>
-            openDirections({
-              facilityName: booking.pitch.facilityName,
-              address: booking.pitch.address,
-              landmark: booking.pitch.landmark,
-              areaName: booking.pitch.areaName,
-            })
-          }
-          style={{
-            backgroundColor: "transparent",
-            borderColor: "rgba(255,255,255,0.35)",
-          }}
-          textColor={palette.white}
-          accessibilityHint="Opens Google Maps"
-        />
-      </View>
+      </PitchBand>
+
+      <Animated.View
+        entering={animate ? FadeIn.delay(950).duration(300) : undefined}
+      >
+        <Card>
+          <Detail label="When">
+            {day.long}, {booking.localStart} to {booking.localEnd}
+          </Detail>
+          <Divider />
+          <Detail label="Where">
+            {booking.pitch.facilityName}, {booking.pitch.name}
+            {"\n"}
+            <Body tone="muted">{placeLine(booking.pitch)}</Body>
+          </Detail>
+          <Button
+            variant="outline"
+            icon="navigate-outline"
+            label="Get directions"
+            onPress={() =>
+              openDirections({
+                facilityName: booking.pitch.facilityName,
+                address: booking.pitch.address,
+                landmark: booking.pitch.landmark,
+                areaName: booking.pitch.areaName,
+              })
+            }
+            accessibilityHint="Opens Google Maps"
+          />
+          <Divider />
+          <Detail label="Paid">
+            <Body weight="semibold" numeric>
+              {formatNaira(booking.amountMinor)}
+            </Body>
+          </Detail>
+          {policy ? (
+            <>
+              <Divider />
+              <Detail label="If plans change">
+                {policy.label}. <Body tone="muted">{policy.summary}</Body>
+              </Detail>
+            </>
+          ) : null}
+        </Card>
+      </Animated.View>
     </View>
   );
 }
@@ -157,47 +164,29 @@ function Detail({
   children: React.ReactNode;
 }) {
   return (
-    <View style={{ gap: 2 }}>
-      <Body style={styles.label} size={14}>
+    <View style={{ gap: 2, paddingVertical: space.xs }}>
+      <Body tone="muted" size={14}>
         {label}
       </Body>
-      <Body weight="semibold" style={styles.white}>
-        {children}
-      </Body>
+      <Body weight="semibold">{children}</Body>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: palette.pitch,
-    borderRadius: radius.lg,
-    padding: space.xl,
-    gap: space.md,
-  },
-  top: { flexDirection: "row", alignItems: "center", gap: space.md },
-  mark: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: palette.volt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  white: { color: palette.white },
-  soft: { color: "rgba(255,255,255,0.85)", fontFamily: fonts.body },
-  label: { color: "rgba(255,255,255,0.7)" },
+  bandContent: { gap: space.lg, padding: space.xl },
+  top: { flexDirection: "row", alignItems: "center", gap: space.lg },
   reference: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.18)",
+    paddingTop: space.md,
+    gap: 2,
+  },
+  code: {
     color: palette.volt,
     fontFamily: fonts.displayHeavy,
-    fontSize: 44,
-    lineHeight: 50,
-    letterSpacing: 1.5,
-  },
-  details: {
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.2)",
-    paddingTop: space.lg,
-    gap: space.md,
+    fontSize: 38,
+    lineHeight: 44,
+    letterSpacing: 1,
   },
 });

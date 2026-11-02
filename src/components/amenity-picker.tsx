@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Body } from "@/components/ui";
+import { StyleSheet, View } from "react-native";
+import { Body, Press } from "@/components/ui";
 import { AMENITIES, type Amenity } from "@/lib/amenities";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -22,7 +22,7 @@ export function AmenityPicker({
         {AMENITIES.map((item) => {
           const checked = value.includes(item.value);
           return (
-            <Pressable
+            <Press
               key={item.value}
               accessibilityRole="checkbox"
               accessibilityState={{ checked }}
@@ -53,7 +53,7 @@ export function AmenityPicker({
               />
               <Ionicons name={item.icon} size={18} color={colors.textMuted} />
               <Body style={{ flex: 1 }}>{item.label}</Body>
-            </Pressable>
+            </Press>
           );
         })}
       </View>

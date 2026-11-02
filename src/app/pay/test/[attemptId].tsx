@@ -3,10 +3,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { getTestPayment, simulateTestPayment } from "@/api/generated";
+import { ProgressSteps } from "@/components/progress-steps";
 import {
   Body,
   Button,
   Card,
+  Divider,
   Heading,
   Notice,
   Screen,
@@ -68,7 +70,8 @@ export default function TestPaymentScreen() {
 
   return (
     <Screen edges={["bottom"]}>
-      <Notice tone="success" title="Test payment">
+      <ProgressSteps current={2} />
+      <Notice title="Test payment">
         <Body>
           This screen stands in for Paystack while PitchPadi is in test mode. No
           real money moves.
@@ -81,14 +84,20 @@ export default function TestPaymentScreen() {
       ) : (
         <>
           <Card>
-            <Body tone="muted">{payment.data.facilityName}</Body>
-            <Heading>{formatNaira(payment.data.amountMinor)}</Heading>
-            <Body>
+            <Body tone="muted" size={14}>
+              Paying {payment.data.facilityName}
+            </Body>
+            <Heading style={{ fontVariant: ["tabular-nums"] }}>
+              {formatNaira(payment.data.amountMinor)}
+            </Heading>
+            <Divider />
+            <Body numeric>
               {dateParts(payment.data.localDate).long},{" "}
               {payment.data.localStart}
             </Body>
-            <Body tone="muted">
-              {METHOD_NAME[payment.data.method]} · {payment.data.reference}
+            <Body tone="muted" numeric size={14}>
+              {METHOD_NAME[payment.data.method]}, reference{" "}
+              {payment.data.reference}
             </Body>
           </Card>
           {payment.data.status !== "checkout_open" ? (

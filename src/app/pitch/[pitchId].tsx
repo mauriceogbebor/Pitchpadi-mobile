@@ -2,13 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   createHold,
@@ -16,10 +10,23 @@ import {
   type SlotOption,
   type StartTime,
 } from "@/api/generated";
-import { Chip, ChipRow, TimeChip } from "@/components/chips";
-import { Body, Button, Card, Heading, Notice, Skeleton } from "@/components/ui";
+import { ActionBar } from "@/components/action-bar";
+import { TimeChip } from "@/components/chips";
+import { DateStrip } from "@/components/date-strip";
+import { PitchBand } from "@/components/pitch-band";
+import {
+  Body,
+  Button,
+  Card,
+  Heading,
+  Notice,
+  Press,
+  Section,
+  Skeleton,
+} from "@/components/ui";
 import { venueAmenities } from "@/lib/amenities";
 import {
+  addDays,
   dateParts,
   formatDuration,
   formatNaira,
@@ -118,6 +125,7 @@ export default function PitchScreen() {
     }
   }
 
+  const day = dateParts(date);
   return (
     <SafeAreaView
       edges={["bottom"]}
@@ -134,7 +142,10 @@ export default function PitchScreen() {
         }
       >
         {pitch.isPending ? (
-          <Skeleton height={140} />
+          <>
+            <Skeleton height={190} count={1} />
+            <Skeleton height={76} count={2} />
+          </>
         ) : pitch.isError ? (
           <Notice
             tone="danger"
@@ -152,34 +163,37 @@ export default function PitchScreen() {
         ) : (
           info && (
             <>
-              <View style={{ gap: space.xs }}>
-                <Heading>{info.facilityName}</Heading>
-                <Body tone="muted" size={17}>
+              <PitchBand markings="box">
+                <Heading style={{ color: colors.onBand }}>
+                  {info.facilityName}
+                </Heading>
+                <Body tone="onBandMuted" size={17}>
                   {info.name}, {info.type}
                 </Body>
-              </View>
-
-              <Card>
-                <View style={styles.row}>
+                <View style={styles.place}>
                   <Ionicons
                     name="location-outline"
-                    size={20}
-                    color={colors.link}
+                    size={18}
+                    color={colors.accent}
                   />
-                  <Body style={{ flex: 1 }}>{placeLine(info)}</Body>
+                  <Body tone="onBand" style={{ flex: 1 }}>
+                    {placeLine(info)}
+                  </Body>
                 </View>
                 <Button
                   variant="outline"
+                  icon="navigate-outline"
                   label="Get directions"
                   onPress={() => openDirections(info)}
                   accessibilityHint="Opens Google Maps"
+                  textColor={colors.onBand}
+                  style={styles.onBandOutline}
                 />
-              </Card>
+              </PitchBand>
 
               {amenities.length > 0 && (
-                <View style={{ gap: space.sm }}>
-                  <Heading level={2}>At the venue</Heading>
-                  <View style={styles.amenities}>
+                <Section title="At the venue">
+                  <View style={styles.wrap}>
                     {amenities.map((item) => (
                       <View
                         key={item.value}
@@ -190,50 +204,41 @@ export default function PitchScreen() {
                       >
                         <Ionicons
                           name={item.icon}
-                          size={18}
+                          size={17}
                           color={colors.link}
                         />
-                        <Body>{item.label}</Body>
+                        <Body size={15}>{item.label}</Body>
                       </View>
                     ))}
                   </View>
-                </View>
+                </Section>
               )}
 
-              <Heading level={2}>Pick a time</Heading>
-              <ChipRow label="Day">
-                {days.map((day) => {
-                  const parts = dateParts(day);
-                  return (
-                    <Chip
-                      key={day}
-                      selected={day === date}
-                      onPress={() => {
-                        setDate(day);
-                        setStart(null);
-                        setError(null);
-                      }}
-                      label={
-                        day === today
-                          ? "Today"
-                          : `${parts.weekday} ${parts.day}`
-                      }
-                      accessibilityLabel={parts.long}
-                    />
-                  );
-                })}
-              </ChipRow>
-
-              <View style={{ gap: space.sm }}>
-                <Body weight="semibold">
-                  Kick-off on {dateParts(date).long}
-                </Body>
+              <Section title="Pick a time">
+                <DateStrip
+                  days={days}
+                  value={date}
+                  today={today}
+                  onChange={(next) => {
+                    setDate(next);
+                    setStart(null);
+                    setError(null);
+                  }}
+                />
+                <Body tone="muted">Kick-off on {day.long}</Body>
                 {pitch.data.startTimes.length === 0 ? (
-                  <Notice title="No open times on this day">
-                    <Body tone="muted">Try another day.</Body>
-                  </Notice>
+                  <Notice
+                    title="No open times on this day"
+                    action={
+                      <Button
+                        variant="outline"
+                        label="Try the next day"
+                        onPress={() => setDate(addDays(date, 1))}
+                      />
+                    }
+                  />
                 ) : (
-                  <View style={styles.times}>
+                  <View style={styles.wrap}>
                     {pitch.data.startTimes.map((item) => (
                       <TimeChip
                         key={item.startsAt}
@@ -248,65 +253,80 @@ export default function PitchScreen() {
                     ))}
                   </View>
                 )}
-              </View>
+              </Section>
 
               {chosen && (
-                <View style={{ gap: space.sm }}>
-                  <Body weight="semibold">How long?</Body>
-                  {chosen.options.map((item) => {
-                    const selected =
-                      item.durationMinutes === option?.durationMinutes;
-                    return (
-                      <Pressable
-                        key={item.durationMinutes}
-                        accessibilityRole="radio"
-                        accessibilityState={{ checked: selected }}
-                        aria-checked={selected}
-                        onPress={() => setDuration(item.durationMinutes)}
-                        style={[
-                          styles.option,
-                          {
-                            borderColor: selected
-                              ? colors.primary
-                              : colors.border,
-                            backgroundColor: colors.card,
-                            borderWidth: selected ? 2 : 1,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            selected ? "radio-button-on" : "radio-button-off"
-                          }
-                          size={22}
-                          color={selected ? colors.link : colors.textMuted}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <Body weight="semibold">
-                            {formatDuration(item.durationMinutes)}
+                <Section title="How long?">
+                  <View style={{ gap: space.sm }}>
+                    {chosen.options.map((item) => {
+                      const selected =
+                        item.durationMinutes === option?.durationMinutes;
+                      return (
+                        <Press
+                          key={item.durationMinutes}
+                          scaleTo={0.985}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected }}
+                          aria-checked={selected}
+                          onPress={() => setDuration(item.durationMinutes)}
+                          style={[
+                            styles.option,
+                            {
+                              borderColor: selected
+                                ? colors.borderStrong
+                                : colors.border,
+                              backgroundColor: colors.card,
+                              borderWidth: selected ? 2 : 1,
+                              paddingHorizontal: selected
+                                ? space.md - 1
+                                : space.md,
+                            },
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              selected ? "radio-button-on" : "radio-button-off"
+                            }
+                            size={22}
+                            color={selected ? colors.link : colors.textMuted}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Body weight="semibold">
+                              {formatDuration(item.durationMinutes)}
+                            </Body>
+                            <Body tone="muted" numeric>
+                              {chosen.localStart} to {item.localEnd}
+                              {item.endsNextDay ? " (next day)" : ""}
+                            </Body>
+                          </View>
+                          <Body weight="bold" size={17} numeric>
+                            {formatNaira(item.amountMinor)}
                           </Body>
-                          <Body tone="muted">
-                            {chosen.localStart} to {item.localEnd}
-                            {item.endsNextDay ? " (next day)" : ""}
-                          </Body>
-                        </View>
-                        <Body weight="bold" size={17}>
-                          {formatNaira(item.amountMinor)}
-                        </Body>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                        </Press>
+                      );
+                    })}
+                  </View>
+                </Section>
               )}
 
               {info.cancellationPolicy && (
-                <View style={{ gap: space.xs }}>
-                  <Body weight="semibold">If plans change</Body>
-                  <Body tone="muted">
-                    {info.cancellationPolicy.label}.{" "}
-                    {info.cancellationPolicy.summary}
-                  </Body>
-                </View>
+                <Card variant="flat">
+                  <View style={styles.place}>
+                    <Ionicons
+                      name="shield-checkmark-outline"
+                      size={20}
+                      color={colors.link}
+                    />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Body weight="semibold">
+                        If plans change: {info.cancellationPolicy.label}
+                      </Body>
+                      <Body tone="muted">
+                        {info.cancellationPolicy.summary}
+                      </Body>
+                    </View>
+                  </View>
+                </Card>
               )}
             </>
           )
@@ -314,61 +334,64 @@ export default function PitchScreen() {
       </ScrollView>
 
       {chosen && option && (
-        <View
-          style={[
-            styles.bar,
-            { backgroundColor: colors.card, borderTopColor: colors.border },
-          ]}
-        >
+        <ActionBar>
           {error ? (
             <Body tone="danger" accessibilityLiveRegion="assertive">
               {error}
             </Body>
           ) : (
-            <Body tone="muted">
-              {dateParts(date).long}, {chosen.localStart} to {option.localEnd}
-              {option.amountDueMinor !== option.amountMinor
-                ? `. Pay ${formatNaira(option.amountDueMinor)} now`
-                : ""}
-            </Body>
+            <View style={styles.summary}>
+              <Body weight="semibold" numeric style={{ flex: 1 }}>
+                {day.weekday} {day.day} {day.month}, {chosen.localStart} to{" "}
+                {option.localEnd}
+              </Body>
+              <Body weight="bold" numeric>
+                {formatNaira(option.amountMinor)}
+              </Body>
+            </View>
           )}
+          {!error && option.amountDueMinor !== option.amountMinor ? (
+            <Body tone="muted" numeric>
+              Pay {formatNaira(option.amountDueMinor)} now
+            </Body>
+          ) : null}
           <Button
-            label={`Hold ${chosen.localStart} for ${formatNaira(option.amountMinor)}`}
+            label={`Hold ${chosen.localStart}`}
+            icon="lock-closed-outline"
             onPress={hold}
             busy={holding}
             accessibilityHint="Keeps this time for you while you pay"
           />
-        </View>
+        </ActionBar>
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
-  row: { flexDirection: "row", gap: space.sm, alignItems: "flex-start" },
-  amenities: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.xl },
+  place: { flexDirection: "row", gap: space.sm, alignItems: "flex-start" },
+  onBandOutline: {
+    backgroundColor: "transparent",
+    borderColor: "rgba(255,255,255,0.35)",
+    marginTop: space.sm,
+  },
+  wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   amenity: {
     flexDirection: "row",
     alignItems: "center",
-    gap: space.xs,
+    gap: 6,
     borderRadius: radius.pill,
     paddingHorizontal: space.md,
-    paddingVertical: space.xs + 2,
+    paddingVertical: 6,
   },
-  times: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   option: {
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
     minHeight: TAP + 16,
     borderRadius: radius.md,
-    paddingHorizontal: space.md,
     paddingVertical: space.sm,
   },
-  bar: {
-    borderTopWidth: 1,
-    padding: space.lg,
-    gap: space.sm,
-  },
+  summary: { flexDirection: "row", alignItems: "center", gap: space.md },
 });

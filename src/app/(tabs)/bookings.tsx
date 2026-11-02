@@ -1,18 +1,22 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useQuery } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { listMyBookings, type Hold, type PublicBooking } from "@/api/generated";
+import type { Hold, PublicBooking } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
-import { Body, Button, Card, Heading, Notice, Skeleton } from "@/components/ui";
+import { DateBlock } from "@/components/date-block";
+import { PitchBand } from "@/components/pitch-band";
+import {
+  Body,
+  Button,
+  Card,
+  Heading,
+  Notice,
+  Press,
+  Section,
+  Skeleton,
+} from "@/components/ui";
 import {
   addDays,
   dateParts,
@@ -20,7 +24,8 @@ import {
   formatNaira,
   lagosToday,
 } from "@/lib/format";
-import { space } from "@/theme/tokens";
+import { useMyBookings } from "@/lib/my-bookings";
+import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,25 +35,14 @@ const STATUS_LABEL: Record<string, string> = {
   refunded: "Refunded",
 };
 
-/** The player's games: upcoming first, then recent ones. */
+/** The player's games as a fixtures list: not finished, coming up, earlier. */
 export default function BookingsScreen() {
   const colors = useColors();
   const auth = useAuth();
   const signedIn = auth.status === "signedIn";
-
-  const userId = signedIn ? auth.me.user.id : null;
-  const bookings = useQuery({
-    // Scoped to the account: another person signing in on this phone never
-    // sees these, even from the cache (AuthProvider also clears it).
-    queryKey: ["myBookings", userId],
-    enabled: signedIn,
-    queryFn: async () => {
-      const response = await listMyBookings();
-      if (response.status !== 200)
-        throw new Error("We could not load your bookings.");
-      return response.data;
-    },
-  });
+  // Scoped to the account: another person signing in on this phone never
+  // sees these, even from the cache (AuthProvider also clears it).
+  const bookings = useMyBookings();
 
   // Fresh on every visit: a payment may have landed while the player was away.
   const { refetch } = bookings;
@@ -57,6 +51,11 @@ export default function BookingsScreen() {
       if (signedIn) void refetch();
     }, [signedIn, refetch]),
   );
+
+  const data = bookings.data;
+  const empty =
+    !!data &&
+    data.inProgress.length + data.upcoming.length + data.past.length === 0;
 
   return (
     <SafeAreaView
@@ -76,17 +75,24 @@ export default function BookingsScreen() {
       >
         <Heading>My bookings</Heading>
         {auth.status === "loading" ? (
-          <Skeleton height={110} count={2} />
+          <Skeleton height={84} count={3} />
         ) : !signedIn ? (
-          <>
-            <Body tone="muted">
+          <PitchBand markings="centre" contentStyle={styles.bandContent}>
+            <Heading level={2} style={{ color: colors.onBand }}>
+              Your games, in one place
+            </Heading>
+            <Body tone="onBandMuted">
               Sign in with your phone number to see your games, including ones
               you booked on the website with the same number.
             </Body>
-            <Button label="Sign in" onPress={() => router.push("/sign-in")} />
-          </>
+            <Button
+              variant="onBand"
+              label="Sign in"
+              onPress={() => router.push("/sign-in")}
+            />
+          </PitchBand>
         ) : bookings.isPending ? (
-          <Skeleton height={110} count={2} />
+          <Skeleton height={84} count={3} />
         ) : bookings.isError ? (
           <Notice
             tone="danger"
@@ -99,60 +105,69 @@ export default function BookingsScreen() {
               />
             }
           >
-            <Body>Check your connection.</Body>
+            <Body>Check your connection, then try again.</Body>
           </Notice>
-        ) : bookings.data.inProgress.length +
-            bookings.data.upcoming.length +
-            bookings.data.past.length ===
-          0 ? (
-          <Notice
-            title="No bookings yet"
-            action={
-              <Button
-                label="Find a pitch"
-                onPress={() => router.navigate("/")}
-              />
-            }
-          >
-            <Body tone="muted">
+        ) : empty ? (
+          <PitchBand markings="centre" contentStyle={styles.bandContent}>
+            <Heading level={2} style={{ color: colors.onBand }}>
+              No bookings yet
+            </Heading>
+            <Body tone="onBandMuted">
               Games you book while signed in, or with this phone number, show
               here.
             </Body>
-          </Notice>
+            <Button
+              variant="onBand"
+              icon="football-outline"
+              label="Find a pitch"
+              onPress={() => router.navigate("/")}
+            />
+          </PitchBand>
         ) : (
           <>
-            {bookings.data.inProgress.length > 0 && (
-              <>
-                <Heading level={2}>Not finished</Heading>
-                {bookings.data.inProgress.map((hold) => (
+            {data!.inProgress.length > 0 && (
+              <Section title="Not finished">
+                {data!.inProgress.map((hold) => (
                   <UnfinishedRow key={hold.id} hold={hold} />
                 ))}
-              </>
+              </Section>
             )}
-            <Heading level={2}>Coming up</Heading>
-            {bookings.data.upcoming.length === 0 ? (
-              <Notice
-                title="Nothing booked yet"
-                action={
+            <Section title="Coming up">
+              {data!.upcoming.length === 0 ? (
+                <Card variant="flat" style={styles.quiet}>
+                  <Body tone="muted">Nothing coming up.</Body>
                   <Button
                     variant="outline"
                     label="Find a pitch"
                     onPress={() => router.navigate("/")}
                   />
-                }
-              />
-            ) : (
-              bookings.data.upcoming.map((booking) => (
-                <BookingRow key={booking.reference} booking={booking} />
-              ))
-            )}
-            {bookings.data.past.length > 0 && (
-              <>
-                <Heading level={2}>Earlier games</Heading>
-                {bookings.data.past.map((booking) => (
-                  <BookingRow key={booking.reference} booking={booking} past />
-                ))}
-              </>
+                </Card>
+              ) : (
+                <Card style={styles.list}>
+                  {data!.upcoming.map((booking, index) => (
+                    <FixtureRow
+                      key={booking.reference}
+                      booking={booking}
+                      next={index === 0}
+                      first={index === 0}
+                    />
+                  ))}
+                </Card>
+              )}
+            </Section>
+            {data!.past.length > 0 && (
+              <Section title="Earlier">
+                <Card style={styles.list}>
+                  {data!.past.map((booking, index) => (
+                    <FixtureRow
+                      key={booking.reference}
+                      booking={booking}
+                      past
+                      first={index === 0}
+                    />
+                  ))}
+                </Card>
+              </Section>
             )}
           </>
         )}
@@ -165,8 +180,7 @@ function dayLabel(date: string) {
   const today = lagosToday();
   if (date === today) return "Today";
   if (date === addDays(today, 1)) return "Tomorrow";
-  const parts = dateParts(date);
-  return `${parts.weekday} ${parts.day} ${parts.month}`;
+  return dateParts(date).long;
 }
 
 /** A time the player is holding or paying for: back to checkout in one tap. */
@@ -174,84 +188,108 @@ function UnfinishedRow({ hold }: { hold: Hold }) {
   const colors = useColors();
   const paying = hold.payment?.status === "checkout_open";
   const until = hold.expiresAt ? formatInstantTime(hold.expiresAt) : "";
+  const title = paying ? "Waiting for your payment" : "Held, not paid yet";
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
-      accessibilityLabel={`${paying ? "Waiting for your payment" : "Held, not paid yet"}: ${hold.pitch.facilityName}, ${dayLabel(hold.localDate)} at ${hold.localStart}. Continue checkout`}
+      accessibilityLabel={`${title}: ${hold.pitch.facilityName}, ${dayLabel(hold.localDate)} at ${hold.localStart}. Continue checkout`}
       onPress={() =>
         router.push({
           pathname: "/checkout/[holdId]",
           params: { holdId: hold.id },
         })
       }
-      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
     >
-      <Card style={{ borderColor: colors.link, borderWidth: 2 }}>
-        <View style={styles.row}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Body weight="semibold" tone="link">
-              {paying ? "Waiting for your payment" : "Held, not paid yet"}
-            </Body>
-            <Body weight="bold" size={18}>
-              {dayLabel(hold.localDate)}, {hold.localStart}
-            </Body>
-            <Body>{hold.pitch.facilityName}</Body>
-            <Body tone="muted">
-              {formatNaira(hold.amountDueMinor)} · held until {until}
-            </Body>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      <Card
+        style={[
+          styles.unfinished,
+          { borderColor: colors.borderStrong, borderWidth: 2 },
+        ]}
+      >
+        <DateBlock date={hold.localDate} strong />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Body weight="semibold" tone="link" size={14}>
+            {title}
+          </Body>
+          <Body weight="semibold" numeric>
+            {hold.localStart}, {hold.pitch.facilityName}
+          </Body>
+          <Body tone="muted" size={14} numeric>
+            {formatNaira(hold.amountDueMinor)}
+            {until ? `, held until ${until}` : ""}
+          </Body>
         </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </Card>
-    </Pressable>
+    </Press>
   );
 }
 
-function BookingRow({
+/** One game in the fixtures list: date block, time and venue, reference. */
+function FixtureRow({
   booking,
   past = false,
+  next = false,
+  first,
 }: {
   booking: PublicBooking;
   past?: boolean;
+  next?: boolean;
+  first: boolean;
 }) {
   const colors = useColors();
   const status = STATUS_LABEL[booking.status];
+  const day = dayLabel(booking.localDate);
+  const relative = day === "Today" || day === "Tomorrow";
   return (
-    <Pressable
+    <Press
+      scaleTo={0.985}
       accessibilityRole="button"
-      accessibilityLabel={`${booking.pitch.facilityName}, ${dayLabel(booking.localDate)} at ${booking.localStart}. Open booking ${booking.reference}`}
+      accessibilityLabel={`${booking.pitch.facilityName}, ${day} at ${booking.localStart}${status ? `, ${status}` : ""}. Open booking ${booking.reference}`}
       onPress={() =>
         router.push({
           pathname: "/booking/[reference]",
           params: { reference: booking.reference },
         })
       }
-      style={({ pressed }) => ({ opacity: pressed ? 0.9 : past ? 0.85 : 1 })}
+      style={[
+        styles.fixture,
+        !first && { borderTopWidth: 1, borderTopColor: colors.border },
+      ]}
     >
-      <Card>
-        <View style={styles.row}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Body weight="bold" size={18}>
-              {dayLabel(booking.localDate)}, {booking.localStart}
-            </Body>
-            <Body>{booking.pitch.facilityName}</Body>
-            <Body tone="muted">
-              {booking.pitch.name}, {booking.pitch.areaName} ·{" "}
-              {formatNaira(booking.amountMinor)}
-            </Body>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </View>
-        <Body tone="muted" size={14}>
-          {booking.reference}
-          {status ? ` · ${status}` : ""}
+      <DateBlock date={booking.localDate} strong={next} faded={past} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Body weight="semibold" numeric tone={past ? "muted" : undefined}>
+          {relative ? `${day}, ` : ""}
+          {booking.localStart}
         </Body>
-      </Card>
-    </Pressable>
+        <Body numberOfLines={1}>{booking.pitch.facilityName}</Body>
+        <Body tone="muted" size={14} numeric numberOfLines={1}>
+          {status ? `${status}, ` : ""}
+          {booking.pitch.name}, {booking.pitch.areaName}
+        </Body>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+    </Press>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
-  row: { flexDirection: "row", alignItems: "center", gap: space.md },
+  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.xl },
+  bandContent: { gap: space.md, padding: space.xl },
+  list: { padding: 0, paddingHorizontal: space.md, gap: 0 },
+  quiet: { gap: space.md },
+  unfinished: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    borderRadius: radius.lg,
+  },
+  fixture: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingVertical: space.md,
+    minHeight: 92,
+  },
 });
