@@ -993,7 +993,7 @@
       },
       "post": {
         "operationId": "createManualBooking",
-        "summary": "Record a phone, WhatsApp or walk-in booking. Blocks the time exactly like an online booking; 409 if anything is in the way",
+        "summary": "Record a phone, WhatsApp or walk-in booking. Blocks the time exactly like an online booking; 409 if anything is in the way. Repeating the same Idempotency-Key returns the same booking (200)",
         "description": "Requires an owner or staff member of the organization.",
         "tags": [
           "Owner"
@@ -1006,6 +1006,16 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional. A random key the client keeps for this booking and reuses on retry, so a lost response never records it twice.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,100}$"
             }
           }
         ],
@@ -1086,6 +1096,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Repeated request: the existing result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedManualBooking"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Success",
             "content": {
@@ -1137,6 +1157,16 @@
             }
           },
           "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Error",
             "content": {
               "application/json": {

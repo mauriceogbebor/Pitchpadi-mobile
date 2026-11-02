@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02 — M2 Venue mode (0.3.0)
+
+- Venue tab: the day's bookings by pitch with status (paid how, to collect, cancelled, being paid online), totals (bookings, paid, to collect), previous/next day and back to today, venue switcher; refreshes every minute and on opening.
+- Add booking: pitch, day, kick-off (half hours, with times after midnight on request), length; the API checks the time as you choose and says what it found. Customer, how they booked, price (standard, editable), paid or not, note. Saving is safe to retry: it never records the same booking twice.
+- Booking details: call or WhatsApp the customer, mark paid by cash, POS or transfer, cancel with a reason (venue-entered bookings that have not ended).
+
 ## 2026-11-02 — M1 review fixes (0.2.1)
 
 - Signing in, signing out or an ended session clears all loaded data; Bookings and the venue calendar are cached per account.

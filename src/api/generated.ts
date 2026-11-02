@@ -2198,6 +2198,11 @@ export const getOwnerCalendar = async (organizationId: string,
 
 
 
+export type createManualBookingResponse200 = {
+  data: CreatedManualBooking
+  status: 200
+}
+
 export type createManualBookingResponse201 = {
   data: CreatedManualBooking
   status: 201
@@ -2228,10 +2233,15 @@ export type createManualBookingResponse409 = {
   status: 409
 }
 
-export type createManualBookingResponseSuccess = (createManualBookingResponse201) & {
+export type createManualBookingResponse422 = {
+  data: ErrorBody
+  status: 422
+}
+
+export type createManualBookingResponseSuccess = (createManualBookingResponse200 | createManualBookingResponse201) & {
   headers: Headers;
 };
-export type createManualBookingResponseError = (createManualBookingResponse400 | createManualBookingResponse401 | createManualBookingResponse403 | createManualBookingResponse404 | createManualBookingResponse409) & {
+export type createManualBookingResponseError = (createManualBookingResponse400 | createManualBookingResponse401 | createManualBookingResponse403 | createManualBookingResponse404 | createManualBookingResponse409 | createManualBookingResponse422) & {
   headers: Headers;
 };
 
@@ -2247,7 +2257,7 @@ export const getCreateManualBookingUrl = (organizationId: string,) => {
 
 /**
  * Requires an owner or staff member of the organization.
- * @summary Record a phone, WhatsApp or walk-in booking. Blocks the time exactly like an online booking; 409 if anything is in the way
+ * @summary Record a phone, WhatsApp or walk-in booking. Blocks the time exactly like an online booking; 409 if anything is in the way. Repeating the same Idempotency-Key returns the same booking (200)
  */
 export const createManualBooking = async (organizationId: string,
     createManualBookingBody: CreateManualBookingBody, options?: Parameters<typeof appFetch>[1]): Promise<createManualBookingResponse> => {

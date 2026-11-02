@@ -1,9 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useState } from "react";
-import { Linking, Pressable, StyleSheet, View } from "react-native";
-import { getOwnerCalendar, type CalendarEntry } from "@/api/generated";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { CalendarEntry } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
+import { Chip, ChipRow } from "@/components/chips";
 import {
   Body,
   Button,
@@ -19,20 +27,14 @@ import {
   formatDuration,
   formatInstantTime,
   formatNaira,
-  formatPhone,
   lagosToday,
 } from "@/lib/format";
-import { radius, space } from "@/theme/tokens";
+import { StatusPill } from "@/components/status-pill";
+import { CHANNEL_NOTE, entryStatus, useVenueCalendar } from "@/lib/venue";
+import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
-const CHANNEL: Record<string, string> = {
-  phone: "Booked by phone",
-  whatsapp: "Booked on WhatsApp",
-  walk_in: "Walk-in",
-  other: "Entered by the venue",
-};
-
-/** Venue mode: one day of bookings for the venue you run. Read-only in M0. */
+/** Venue mode: one day of bookings for the venue you run, and adding bookings. */
 export default function VenueScreen() {
   const auth = useAuth();
   const colors = useColors();
@@ -41,26 +43,15 @@ export default function VenueScreen() {
   const venues = auth.status === "signedIn" ? auth.me.organizations : [];
   const [venueId, setVenueId] = useState<string | null>(null);
   const venue = venues.find((item) => item.id === venueId) ?? venues[0];
+  const calendar = useVenueCalendar(venue?.id, date);
 
-  const calendar = useQuery({
-    // Scoped to the account as well as the venue: see AuthProvider.
-    queryKey: [
-      "calendar",
-      auth.status === "signedIn" ? auth.me.user.id : null,
-      venue?.id,
-      date,
-    ],
-    enabled: !!venue,
-    queryFn: async () => {
-      const response = await getOwnerCalendar(venue!.id, { date });
-      if (response.status !== 200)
-        throw new Error(
-          (response.data as { error?: string }).error ??
-            "Could not load bookings.",
-        );
-      return response.data.calendar;
-    },
-  });
+  // Fresh whenever the tab is opened (for example after adding a booking).
+  const { refetch } = calendar;
+  useFocusEffect(
+    useCallback(() => {
+      if (venue) void refetch();
+    }, [venue, refetch]),
+  );
 
   if (auth.status === "loading")
     return (
@@ -109,187 +100,305 @@ export default function VenueScreen() {
 
   const day = dateParts(date);
   const summary = calendar.data?.summary;
-  return (
-    <Screen>
-      <Heading>{venue.name}</Heading>
-      {venues.length > 1 && (
-        <View style={styles.row}>
-          {venues.map((item) => (
-            <Button
-              key={item.id}
-              label={item.name}
-              variant={item.id === venue.id ? "primary" : "outline"}
-              onPress={() => setVenueId(item.id)}
-            />
-          ))}
-        </View>
-      )}
-      <View style={[styles.row, { alignItems: "center" }]}>
-        <Button
-          variant="outline"
-          label="‹ Previous"
-          onPress={() => setDate(addDays(date, -1))}
-        />
-        {date !== today && (
-          <Button
-            variant="outline"
-            label="Today"
-            onPress={() => setDate(today)}
-          />
-        )}
-        <Button
-          variant="outline"
-          label="Next ›"
-          onPress={() => setDate(addDays(date, 1))}
-        />
-      </View>
-      <Heading level={2}>
-        {date === today ? "Today, " : ""}
-        {day.long}
-      </Heading>
+  const data = calendar.data;
+  const openDetails = (entry: CalendarEntry) =>
+    router.push({
+      pathname: "/venue/booking/[reservationId]",
+      params: { reservationId: entry.id, organizationId: venue.id, date },
+    });
 
-      {calendar.isPending ? (
-        <Skeleton height={120} />
-      ) : calendar.isError ? (
-        <Notice
-          tone="danger"
-          title="We could not load this day's bookings"
-          action={
-            <Button
-              variant="outline"
-              label="Try again"
-              onPress={() => calendar.refetch()}
-            />
-          }
-        >
-          <Body>Your bookings are safe. Check your connection.</Body>
-        </Notice>
-      ) : (
-        <>
-          <Body accessibilityLiveRegion="polite">
-            <Body weight="bold">
-              {summary!.bookings}{" "}
-              {summary!.bookings === 1 ? "booking" : "bookings"}
-            </Body>
-            {summary!.paidMinor > 0
-              ? `, ${formatNaira(summary!.paidMinor)} paid`
-              : ""}
-            {summary!.unpaidMinor > 0
-              ? `, ${formatNaira(summary!.unpaidMinor)} to collect`
-              : ""}
-          </Body>
-          {calendar.data!.entries.length === 0 ? (
-            <Notice title="No bookings on this day yet">
-              <Body tone="muted">
-                Online bookings appear here with the player&apos;s phone number.
+  return (
+    <SafeAreaView
+      edges={["top"]}
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={calendar.isRefetching}
+            onRefresh={() => void calendar.refetch()}
+          />
+        }
+      >
+        <View style={{ gap: space.xs }}>
+          <Heading>{venue.name}</Heading>
+          <Body tone="muted">{venue.role === "owner" ? "Owner" : "Staff"}</Body>
+        </View>
+        {venues.length > 1 && (
+          <ChipRow label="Venue">
+            {venues.map((item) => (
+              <Chip
+                key={item.id}
+                label={item.name}
+                selected={item.id === venue.id}
+                onPress={() => setVenueId(item.id)}
+              />
+            ))}
+          </ChipRow>
+        )}
+
+        <View style={styles.dayRow}>
+          <DayButton
+            icon="chevron-back"
+            label="Previous day"
+            onPress={() => setDate(addDays(date, -1))}
+          />
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <Heading level={3} accessibilityLiveRegion="polite">
+              {date === today
+                ? "Today"
+                : `${day.weekday} ${day.day} ${day.month}`}
+            </Heading>
+            {date !== today ? (
+              <Pressable
+                onPress={() => setDate(today)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Body tone="link" weight="semibold" size={14}>
+                  Back to today
+                </Body>
+              </Pressable>
+            ) : (
+              <Body tone="muted" size={14}>
+                {day.long}
               </Body>
-            </Notice>
-          ) : (
-            calendar
-              .data!.pitches.filter((pitch) =>
-                calendar.data!.entries.some(
-                  (entry) => entry.pitchId === pitch.id,
-                ),
-              )
-              .map((pitch) => (
-                <View key={pitch.id} style={{ gap: space.sm }}>
-                  <Heading level={3}>
-                    {pitch.facilityName}
-                    <Body tone="muted"> · {pitch.name}</Body>
-                  </Heading>
-                  {calendar
-                    .data!.entries.filter((entry) => entry.pitchId === pitch.id)
-                    .map((entry) => (
-                      <Entry key={entry.id} entry={entry} />
-                    ))}
-                </View>
-              ))
-          )}
-        </>
-      )}
-      <Body tone="muted" size={14} style={{ color: colors.textMuted }}>
-        Adding bookings, marking them paid and cancelling come to the app next.
-      </Body>
-    </Screen>
+            )}
+          </View>
+          <DayButton
+            icon="chevron-forward"
+            label="Next day"
+            onPress={() => setDate(addDays(date, 1))}
+          />
+        </View>
+
+        <Button
+          label="Add booking"
+          onPress={() =>
+            router.push({
+              pathname: "/venue/new",
+              params: { organizationId: venue.id, date },
+            })
+          }
+          accessibilityHint="Record a phone, WhatsApp or walk-in booking"
+        />
+
+        {calendar.isPending ? (
+          <Skeleton height={110} />
+        ) : calendar.isError ? (
+          <Notice
+            tone="danger"
+            title="We could not load this day's bookings"
+            action={
+              <Button
+                variant="outline"
+                label="Try again"
+                onPress={() => void calendar.refetch()}
+              />
+            }
+          >
+            <Body>Your bookings are safe. Check your connection.</Body>
+          </Notice>
+        ) : (
+          data &&
+          summary && (
+            <>
+              <View style={styles.totals}>
+                <Total
+                  label={summary.bookings === 1 ? "booking" : "bookings"}
+                  value={String(summary.bookings)}
+                  narrow
+                />
+                <Total label="paid" value={formatNaira(summary.paidMinor)} />
+                <Total
+                  label="to collect"
+                  value={formatNaira(summary.unpaidMinor)}
+                  attention={summary.unpaidMinor > 0}
+                />
+              </View>
+              {data.entries.length === 0 ? (
+                <Notice title="No bookings on this day yet">
+                  <Body tone="muted">
+                    Online bookings appear here with the player&apos;s phone
+                    number. Add phone and walk-in bookings with &quot;Add
+                    booking&quot;.
+                  </Body>
+                </Notice>
+              ) : (
+                data.pitches
+                  .filter((pitch) =>
+                    data.entries.some((entry) => entry.pitchId === pitch.id),
+                  )
+                  .map((pitch) => (
+                    <View key={pitch.id} style={{ gap: space.sm }}>
+                      <Body weight="semibold" tone="muted">
+                        {pitch.facilityName} · {pitch.name}
+                      </Body>
+                      {data.entries
+                        .filter((entry) => entry.pitchId === pitch.id)
+                        .map((entry) => (
+                          <EntryRow
+                            key={entry.id}
+                            entry={entry}
+                            onPress={() => openDetails(entry)}
+                          />
+                        ))}
+                    </View>
+                  ))
+              )}
+            </>
+          )
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-function Entry({ entry }: { entry: CalendarEntry }) {
+function DayButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: "chevron-back" | "chevron-forward";
+  label: string;
+  onPress: () => void;
+}) {
   const colors = useColors();
-  const phone = entry.customer?.phoneE164;
-  const status =
-    entry.kind === "hold"
-      ? {
-          label: "Not paid · being paid online",
-          bg: colors.muted,
-          fg: colors.textMuted,
-        }
-      : entry.kind === "cancelled"
-        ? { label: "Cancelled", bg: colors.muted, fg: colors.textMuted }
-        : entry.paymentState === "unpaid"
-          ? {
-              label: "Not paid · collect at the pitch",
-              bg: colors.warningSoft,
-              fg: colors.warningText,
-            }
-          : { label: "Paid", bg: colors.primary, fg: colors.onPrimary };
   return (
-    <Card style={entry.kind === "hold" ? { borderStyle: "dashed" } : undefined}>
-      <Body weight="bold" size={20}>
-        {entry.localStart}
-        <Body tone="muted"> to {entry.localEnd}</Body>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.dayButton,
+        {
+          borderColor: colors.border,
+          backgroundColor: colors.card,
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
+    >
+      <Ionicons name={icon} size={22} color={colors.text} />
+    </Pressable>
+  );
+}
+
+function Total({
+  label,
+  value,
+  attention = false,
+  narrow = false,
+}: {
+  label: string;
+  value: string;
+  attention?: boolean;
+  /** For the booking count, so the money boxes get the room. */
+  narrow?: boolean;
+}) {
+  const colors = useColors();
+  return (
+    <View
+      style={[
+        styles.total,
+        { flex: narrow ? 0.7 : 1 },
+        {
+          backgroundColor: attention ? colors.warningSoft : colors.card,
+          borderColor: attention ? colors.warningSoft : colors.border,
+        },
+      ]}
+    >
+      <Body
+        weight="bold"
+        size={17}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        style={attention ? { color: colors.warningText } : undefined}
+      >
+        {value}
       </Body>
-      <View style={[styles.pill, { backgroundColor: status.bg }]}>
-        <Body weight="semibold" size={14} style={{ color: status.fg }}>
-          {status.label}
+      <Body
+        tone="muted"
+        size={13}
+        style={attention ? { color: colors.warningText } : undefined}
+      >
+        {label}
+      </Body>
+    </View>
+  );
+}
+
+function EntryRow({
+  entry,
+  onPress,
+}: {
+  entry: CalendarEntry;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+  const status = entryStatus(entry);
+  const who =
+    entry.kind === "hold"
+      ? entry.holdExpiresAt
+        ? `Held until ${formatInstantTime(entry.holdExpiresAt)}`
+        : "Being paid online"
+      : (entry.customer?.name ?? "");
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${entry.localStart} to ${entry.localEnd}, ${who}, ${status.label}. Open booking`}
+      onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+    >
+      <Card
+        style={{
+          ...(entry.kind === "hold" ? { borderStyle: "dashed" as const } : {}),
+          ...(entry.kind === "cancelled" ? { opacity: 0.7 } : {}),
+        }}
+      >
+        <View style={styles.entryTop}>
+          <Body weight="bold" size={20} style={{ flex: 1 }}>
+            {entry.localStart}
+            <Body tone="muted"> to {entry.localEnd}</Body>
+          </Body>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </View>
+        <StatusPill tone={status.tone} label={status.label} />
+        <Body weight="semibold" size={17}>
+          {who}
         </Body>
-      </View>
-      {entry.kind === "hold" ? (
-        <Body tone="muted">
-          Not a booking yet.{" "}
-          {entry.holdExpiresAt
-            ? `Held until ${formatInstantTime(entry.holdExpiresAt)}; if payment does not arrive, this time opens up again.`
-            : ""}
-        </Body>
-      ) : (
-        <>
+        {entry.kind !== "hold" && (
           <Body tone="muted">
             {entry.source === "manual"
-              ? CHANNEL[entry.channel ?? "other"]
-              : "Booked and paid online"}
-          </Body>
-          {entry.customer && (
-            <Body weight="semibold" size={17}>
-              {entry.customer.name}
-            </Body>
-          )}
-          {phone && (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => Linking.openURL(`tel:${phone}`)}
-              style={{ minHeight: 44, justifyContent: "center" }}
-            >
-              <Body tone="link" weight="semibold">
-                Call {formatPhone(phone)}
-              </Body>
-            </Pressable>
-          )}
-          <Body tone="muted">
-            {entry.reference} · {formatNaira(entry.amountMinor)} ·{" "}
+              ? CHANNEL_NOTE[entry.channel ?? "other"]
+              : "Booked online"}{" "}
+            · {formatNaira(entry.amountMinor)} ·{" "}
             {formatDuration(entry.durationMinutes)}
           </Body>
-        </>
-      )}
-    </Card>
+        )}
+      </Card>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  pill: {
-    alignSelf: "flex-start",
-    borderRadius: radius.pill,
-    paddingHorizontal: space.md,
-    paddingVertical: 4,
+  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
+  dayRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  dayButton: {
+    width: TAP,
+    height: TAP,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  totals: { flexDirection: "row", gap: space.sm },
+  total: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+  },
+  entryTop: { flexDirection: "row", alignItems: "center", gap: space.sm },
 });

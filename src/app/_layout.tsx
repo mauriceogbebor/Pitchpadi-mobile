@@ -92,6 +92,11 @@ export default function RootLayout() {
             name="booking/[reference]"
             options={{ title: "Booking" }}
           />
+          <Stack.Screen name="venue/new" options={{ title: "Add booking" }} />
+          <Stack.Screen
+            name="venue/booking/[reservationId]"
+            options={{ title: "Booking" }}
+          />
         </Stack>
       </AuthProvider>
     </QueryClientProvider>
