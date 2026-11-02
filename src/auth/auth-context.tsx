@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { getMe, logout, logoutEverywhere, type Me } from "@/api/generated";
 import { setSignedOutHandler } from "@/api/fetch";
+import { forgetPushOnThisPhone } from "@/notifications/push";
 import { clearToken, readToken, saveToken } from "./token-store";
 
 type AuthState =
@@ -75,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(
     async (everywhere = false) => {
+      // First, while still signed in: this phone stops getting this account's
+      // notifications, even if the sign-out request below cannot reach PitchPadi.
+      await forgetPushOnThisPhone().catch(() => undefined);
       try {
         await (everywhere ? logoutEverywhere() : logout());
       } catch {

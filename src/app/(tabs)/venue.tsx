@@ -29,6 +29,7 @@ import {
   formatNaira,
   lagosToday,
 } from "@/lib/format";
+import { PushCard } from "@/components/push-card";
 import { StatusPill } from "@/components/status-pill";
 import { CHANNEL_NOTE, entryStatus, useVenueCalendar } from "@/lib/venue";
 import { radius, space, TAP } from "@/theme/tokens";
@@ -205,6 +206,11 @@ export default function VenueScreen() {
           />
         </View>
 
+        <PushCard
+          variant="prompt"
+          title="Know when a player books"
+          detail="Get a notification on this phone for every new online booking."
+        />
         <Button
           label="Add booking"
           onPress={() =>

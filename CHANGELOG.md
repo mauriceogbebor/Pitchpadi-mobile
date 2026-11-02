@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02 — M4 Links and notifications (0.5.0)
+
+- Notifications: turn them on from Account, the Venue tab ("Know when a player books") or the booked screen ("Get a reminder before kick-off"). New bookings for venue members; confirmations and kick-off reminders for players. Tapping one opens the booking. Signing out stops them on this phone.
+- Push needs a real build: Expo Go and the web preview explain this instead. It switches on with the app's Expo project (`EAS_PROJECT_ID`, M5).
+- Links: team links (`/b/PP-…`, shown as "Game on") and pitch links open in the app; unknown links get a friendly page. With `EXPO_PUBLIC_WEB_URL` set to the live https site, they become verified Android App Links and iOS Universal Links.
+
 ## 2026-11-02 — M3 Venue setup (0.4.0)
 
 - Set up your venue: name, Lagos area, address, landmark, amenities and the first pitch; sent to PitchPadi for review. If the connection drops, the app checks whether the venue was saved and opens it.

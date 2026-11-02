@@ -6,7 +6,10 @@ import { Body, Button, Notice, Screen, Skeleton } from "@/components/ui";
 
 /** One booking from My bookings (or a shared team link opened in the app). */
 export default function BookingScreen() {
-  const { reference } = useLocalSearchParams<{ reference: string }>();
+  const { reference, shared } = useLocalSearchParams<{
+    reference: string;
+    shared?: string;
+  }>();
   const booking = useQuery({
     queryKey: ["booking", reference],
     queryFn: async () => {
@@ -38,7 +41,7 @@ export default function BookingScreen() {
           <Body>Check the reference and your connection.</Body>
         </Notice>
       ) : (
-        <BookedCard booking={booking.data} />
+        <BookedCard booking={booking.data} shared={shared === "1"} />
       )}
     </Screen>
   );

@@ -47,10 +47,13 @@ export function BookedCard({
   booking,
   policy,
   celebrate = false,
+  shared = false,
 }: {
   booking: BookedGame;
   policy?: { label: string; summary: string };
   celebrate?: boolean;
+  /** Opened from a team link: a teammate, not necessarily who booked it. */
+  shared?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const animate = celebrate && !reduceMotion;
@@ -73,7 +76,7 @@ export function BookedCard({
           style={{ flex: 1 }}
         >
           <Heading style={styles.white}>
-            {active ? "You're booked" : "Your booking"}
+            {!active ? "Your booking" : shared ? "Game on" : "You're booked"}
           </Heading>
         </Animated.View>
       </View>

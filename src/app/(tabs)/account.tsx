@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useAuth } from "@/auth/auth-context";
+import { PushCard } from "@/components/push-card";
 import { Body, Button, Card, Heading, Notice, Screen } from "@/components/ui";
 import { formatPhone } from "@/lib/format";
 import { space, TAP } from "@/theme/tokens";
@@ -115,6 +116,14 @@ export default function AccountScreen() {
           onPress={() => router.push("/admin/venues")}
         />
       )}
+      <PushCard
+        title="Turn on notifications"
+        detail={
+          me.organizations.length
+            ? "New bookings at your venue, your booking confirmations and a reminder before kick-off."
+            : "Your booking confirmations and a reminder before kick-off."
+        }
+      />
       <View style={{ gap: space.sm }}>
         <Button
           variant="outline"

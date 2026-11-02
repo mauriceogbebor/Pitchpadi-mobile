@@ -20,6 +20,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { AuthProvider } from "@/auth/auth-context";
+import { PushBridge } from "@/notifications/push-bridge";
 import { useColors, useIsDark } from "@/theme/use-theme";
 import { fonts } from "@/theme/tokens";
 
@@ -64,6 +65,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={client}>
       <AuthProvider>
+        <PushBridge />
         <StatusBar style={dark ? "light" : "dark"} />
         <Stack
           screenOptions={{

@@ -968,6 +968,31 @@ export type ListMyBookings200 = {
   past: PublicBooking[];
 };
 
+export type RegisterPushTokenBodyPlatform = typeof RegisterPushTokenBodyPlatform[keyof typeof RegisterPushTokenBodyPlatform];
+
+
+export const RegisterPushTokenBodyPlatform = {
+  ios: 'ios',
+  android: 'android',
+} as const;
+
+export type RegisterPushTokenBody = {
+  /**
+     * @maxLength 200
+     * @pattern ^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$
+     */
+  token: string;
+  platform: RegisterPushTokenBodyPlatform;
+};
+
+export type RemovePushTokenBody = {
+  /**
+     * @maxLength 200
+     * @pattern ^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$
+     */
+  token: string;
+};
+
 export type ListAreas200 = {
   areas: Area[];
 };
@@ -1902,6 +1927,132 @@ export const listMyBookings = async ( options?: Parameters<typeof appFetch>[1]):
     method: 'GET'
 
 
+  }
+);}
+
+
+
+export type registerPushTokenResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type registerPushTokenResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type registerPushTokenResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type registerPushTokenResponseSuccess = (registerPushTokenResponse200) & {
+  headers: Headers;
+};
+export type registerPushTokenResponseError = (registerPushTokenResponse400 | registerPushTokenResponse401) & {
+  headers: Headers;
+};
+
+export type registerPushTokenResponse = (registerPushTokenResponseSuccess | registerPushTokenResponseError)
+
+export const getRegisterPushTokenUrl = () => {
+
+
+
+
+  return `/v1/me/push-tokens`
+}
+
+/**
+ * Requires a signed-in user.
+ * @summary Get notifications on this phone (new bookings for venue members; booking confirmations and kick-off reminders for players). Tied to this session: signing out stops them. Safe to repeat
+ */
+export const registerPushToken = async (registerPushTokenBody: RegisterPushTokenBody, options?: Parameters<typeof appFetch>[1]): Promise<registerPushTokenResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<registerPushTokenResponse>(getRegisterPushTokenUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerPushTokenBody)
+  }
+);}
+
+
+
+export type removePushTokenResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type removePushTokenResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type removePushTokenResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type removePushTokenResponseSuccess = (removePushTokenResponse200) & {
+  headers: Headers;
+};
+export type removePushTokenResponseError = (removePushTokenResponse400 | removePushTokenResponse401) & {
+  headers: Headers;
+};
+
+export type removePushTokenResponse = (removePushTokenResponseSuccess | removePushTokenResponseError)
+
+export const getRemovePushTokenUrl = () => {
+
+
+
+
+  return `/v1/me/push-tokens/remove`
+}
+
+/**
+ * Requires a signed-in user.
+ * @summary Stop notifications on this phone. Safe to repeat
+ */
+export const removePushToken = async (removePushTokenBody: RemovePushTokenBody, options?: Parameters<typeof appFetch>[1]): Promise<removePushTokenResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<removePushTokenResponse>(getRemovePushTokenUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(removePushTokenBody)
   }
 );}
 

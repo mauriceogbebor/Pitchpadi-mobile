@@ -22,6 +22,7 @@ import {
 } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
 import { BookedCard } from "@/components/booked-card";
+import { PushCard } from "@/components/push-card";
 import { HoldCountdown } from "@/components/hold-countdown";
 import {
   Body,
@@ -128,18 +129,25 @@ export default function CheckoutScreen() {
               <Body>Nothing has changed on our side.</Body>
             </Notice>
           ) : booked ? (
-            <BookedCard
-              booking={{
-                reference: hold.data.booking!.reference,
-                pitch: hold.data.pitch,
-                localDate: hold.data.localDate,
-                localStart: hold.data.localStart,
-                localEnd: hold.data.localEnd,
-                amountMinor: hold.data.amountDueMinor,
-              }}
-              policy={hold.data.cancellationPolicy}
-              celebrate
-            />
+            <>
+              <BookedCard
+                booking={{
+                  reference: hold.data.booking!.reference,
+                  pitch: hold.data.pitch,
+                  localDate: hold.data.localDate,
+                  localStart: hold.data.localStart,
+                  localEnd: hold.data.localEnd,
+                  amountMinor: hold.data.amountDueMinor,
+                }}
+                policy={hold.data.cancellationPolicy}
+                celebrate
+              />
+              <PushCard
+                variant="prompt"
+                title="Get a reminder before kick-off"
+                detail="We'll send one two hours before the game, with the address."
+              />
+            </>
           ) : isLive(hold.data) ? (
             <LiveHold hold={hold.data} onEnd={onEnd} onChanged={onEnd} />
           ) : (
