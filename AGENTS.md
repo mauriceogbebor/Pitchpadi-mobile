@@ -1,4 +1,17 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+This is the PitchPadi app: one Expo/React Native app for players (Play) and venue owners and staff (Venue). Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+
+## PitchPadi rules
+
+The product docs, decisions and backlog live in the sibling repo `pitchpadi-fe/docs/` (start with `AGENTS.md` there; the app's decision is ADR-003). The project rules there apply here too. The ones that matter most in this repo:
+
+- **No business rules in the app.** Prices, slots, holds, payments and permissions come from `pitchpadi-api`. The app displays and asks; the API decides.
+- **The API client is generated.** Change the API's contract, then `npm run api:sync`. Never edit `src/api/generated.ts`.
+- **Session tokens live only in secure storage** (`src/auth/token-store.ts`). Never log them, put them in URLs, or store them in AsyncStorage.
+- **No real money** without Maurice's explicit go-live approval. Payments are confirmed by the API's verified webhook, never by the app.
+- **Built for Africa:** budget Android phones on slow, flaky networks. Cache lists, make every action safe to retry, keep the download small, and use 48 px tap targets.
+- **Lagos time** is UTC+1 all year. Use `src/lib/format.ts`; do not rely on the phone's time zone data.
+- **Plain, sentence-case copy.** Errors say what happened and what to do next.
+- Before calling a task done, run `npm run lint`, `npm run typecheck`, `npm test` and `npx prettier --check .`.
 
 ## Expo has changed — do not trust your training data
 

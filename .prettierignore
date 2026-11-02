@@ -1,0 +1,6 @@
+src/api/generated.ts
+src/api/openapi.json
+.expo
+dist
+node_modules
+assets/
