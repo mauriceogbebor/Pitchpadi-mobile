@@ -3459,6 +3459,140 @@
         }
       }
     },
+    "/v1/public/pitches/{pitchId}/weekly": {
+      "get": {
+        "operationId": "getWeeklyAvailability",
+        "summary": "Book again: the same weekday, kick-off and length over the coming weeks, each open or not, at today's prices",
+        "description": "No sign-in required.",
+        "tags": [
+          "Public"
+        ],
+        "parameters": [
+          {
+            "name": "pitchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "The game to repeat (any past or future kick-off)"
+            }
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "enum": [
+                    60
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    90
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    120
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8,
+              "description": "How many weeks (default 4)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pitch": {
+                      "$ref": "#/components/schemas/PublicPitchSummary"
+                    },
+                    "localStart": {
+                      "type": "string"
+                    },
+                    "weekday": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 6
+                    },
+                    "durationMinutes": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WeeklyOption"
+                      }
+                    }
+                  },
+                  "required": [
+                    "pitch",
+                    "localStart",
+                    "weekday",
+                    "durationMinutes",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/holds": {
       "post": {
         "operationId": "createHold",
@@ -4879,6 +5013,9 @@
               "landmark": {
                 "nullable": true,
                 "type": "string"
+              },
+              "bookable": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -4888,7 +5025,8 @@
               "facilityName",
               "areaName",
               "address",
-              "landmark"
+              "landmark",
+              "bookable"
             ],
             "additionalProperties": false
           },
@@ -6071,6 +6209,52 @@
           "landmark",
           "amenities",
           "location"
+        ],
+        "additionalProperties": false
+      },
+      "WeeklyOption": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "slot": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "startsAt": {
+                "type": "string"
+              },
+              "localStart": {
+                "type": "string"
+              },
+              "localEnd": {
+                "type": "string"
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "amountDueMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "startsAt",
+              "localStart",
+              "localEnd",
+              "amountMinor",
+              "amountDueMinor"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "date",
+          "slot"
         ],
         "additionalProperties": false
       },

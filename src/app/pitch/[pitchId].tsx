@@ -1,11 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  createHold,
   getPublicPitch,
   type SlotOption,
   type StartTime,
@@ -33,7 +32,7 @@ import {
   lagosToday,
   nextDates,
 } from "@/lib/format";
-import { newIdempotencyKey } from "@/lib/ids";
+import { useHoldSlot } from "@/lib/use-hold";
 import { openDirections, placeLine } from "@/lib/links";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -52,11 +51,6 @@ export default function PitchScreen() {
   const [date, setDate] = useState(params.date ?? today);
   const [start, setStart] = useState<string | null>(params.start ?? null);
   const [duration, setDuration] = useState<number | null>(null);
-  const [holding, setHolding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // One key per chosen time and length, so retrying after a dropped connection
-  // returns the same hold instead of trying to book twice.
-  const keys = useRef(new Map<string, string>());
 
   const pitch = useQuery({
     queryKey: ["pitch", params.pitchId, date],
@@ -86,43 +80,17 @@ export default function PitchScreen() {
   const info = pitch.data?.pitch;
   const amenities = info ? venueAmenities(info.amenities) : [];
 
-  async function hold() {
+  const slot = useHoldSlot(() => void pitch.refetch());
+  const holding = slot.holding;
+  const error = slot.error;
+  const setError = slot.setError;
+  function hold() {
     if (!chosen || !option || !info) return;
-    const id = `${chosen.startsAt}:${option.durationMinutes}`;
-    const key = keys.current.get(id) ?? newIdempotencyKey();
-    keys.current.set(id, key);
-    setHolding(true);
-    setError(null);
-    try {
-      const response = await createHold(
-        {
-          pitchId: info.id,
-          startsAt: chosen.startsAt,
-          durationMinutes: option.durationMinutes as 60 | 90 | 120,
-        },
-        { headers: { "idempotency-key": key } },
-      );
-      if (response.status === 200 || response.status === 201) {
-        router.push({
-          pathname: "/checkout/[holdId]",
-          params: { holdId: response.data.hold.id },
-        });
-        return;
-      }
-      keys.current.delete(id);
-      setError(
-        (response.data as ErrorBody).error ??
-          "We could not hold this time. Try again.",
-      );
-      if (response.status === 409) void pitch.refetch();
-    } catch {
-      // Keep the key: the hold may have been made before the connection dropped.
-      setError(
-        "We could not reach PitchPadi. Check your connection and try again.",
-      );
-    } finally {
-      setHolding(false);
-    }
+    void slot.hold({
+      pitchId: info.id,
+      startsAt: chosen.startsAt,
+      durationMinutes: option.durationMinutes,
+    });
   }
 
   const day = dateParts(date);

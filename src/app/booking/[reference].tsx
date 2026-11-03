@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { getPublicBooking } from "@/api/generated";
 import { BookedCard } from "@/components/booked-card";
 import { Body, Button, Notice, Screen, Skeleton } from "@/components/ui";
@@ -41,7 +41,27 @@ export default function BookingScreen() {
           <Body>Check the reference and your connection.</Body>
         </Notice>
       ) : (
-        <BookedCard booking={booking.data} shared={shared === "1"} />
+        <>
+          <BookedCard booking={booking.data} shared={shared === "1"} />
+          {booking.data.pitch.bookable ? (
+            <Button
+              variant="outline"
+              icon="repeat"
+              label="Book this again"
+              accessibilityHint="The same pitch, day and time in the coming weeks"
+              onPress={() =>
+                router.push({
+                  pathname: "/rebook",
+                  params: {
+                    pitchId: booking.data.pitch.id,
+                    startsAt: booking.data.startsAt,
+                    duration: String(booking.data.durationMinutes),
+                  },
+                })
+              }
+            />
+          ) : null}
+        </>
       )}
     </Screen>
   );

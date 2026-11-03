@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-03 — RB-01 Book again (0.8.0)
+
+- **Play again** on Play: your regular games (same pitch, day, time and length), newest first, one tap away.
+- **Book again**: the same time over the next 4 weeks, each open or taken, with today's price and a Hold button that goes straight to checkout. Also from any booking ("Book this again").
+- Only offered while the pitch still takes bookings. Holding is shared with the pitch page, with the same safe retries.
+
 ## 2026-11-03 — MK-01 Marketplace (0.7.0)
 
 - Play: **Near me** shows how far each pitch is and puts the nearest first. Your location is asked for only when you tap it and is rounded to about 1 km before it leaves the phone.

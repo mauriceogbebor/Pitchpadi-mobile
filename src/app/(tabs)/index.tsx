@@ -21,6 +21,7 @@ import {
 import { DateBlock } from "@/components/date-block";
 import { DateStrip } from "@/components/date-strip";
 import { PitchBand } from "@/components/pitch-band";
+import { PlayAgain } from "@/components/play-again";
 import { Segmented } from "@/components/segmented";
 import {
   Body,
@@ -161,6 +162,7 @@ export default function PlayScreen() {
         </PitchBand>
 
         <NextGame />
+        <PlayAgain />
 
         <View style={{ gap: space.md }}>
           <ScrollView

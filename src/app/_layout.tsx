@@ -82,6 +82,7 @@ export default function RootLayout() {
             options={{ presentation: "modal", title: "Sign in" }}
           />
           <Stack.Screen name="pitch/[pitchId]" options={{ title: "Pitch" }} />
+          <Stack.Screen name="rebook" options={{ title: "Book again" }} />
           <Stack.Screen
             name="venues/[facilityId]"
             options={{ title: "Venue" }}

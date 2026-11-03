@@ -192,6 +192,7 @@ export type PublicBookingPitch = {
   address: string;
   /** @nullable */
   landmark: string | null;
+  bookable: boolean;
 };
 
 export type PublicBookingCurrency = typeof PublicBookingCurrency[keyof typeof PublicBookingCurrency];
@@ -767,6 +768,31 @@ export interface PublicVenue {
   landmark: string | null;
   amenities: Amenity[];
   location: GeoPoint | null;
+}
+
+/**
+ * @nullable
+ */
+export type WeeklyOptionSlot = {
+  startsAt: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountDueMinor: number;
+} | null;
+
+export interface WeeklyOption {
+  date: string;
+  /** @nullable */
+  slot: WeeklyOptionSlot;
 }
 
 export const CreateHoldInputDurationMinutes = {  NUMBER_60: 60,
@@ -1570,6 +1596,41 @@ export type GetPublicPitch200 = {
   date: string;
   pitch: PublicPitchSummary;
   startTimes: StartTime[];
+};
+
+export type GetWeeklyAvailabilityParams = {
+  /**
+   * The game to repeat (any past or future kick-off)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  startsAt: string;
+  duration: typeof GetWeeklyAvailabilityDuration[keyof typeof GetWeeklyAvailabilityDuration];
+  /**
+   * How many weeks (default 4)
+   * @minimum 1
+   * @maximum 8
+   */
+  weeks?: number;
+};
+
+export const GetWeeklyAvailabilityDuration = {  NUMBER_60: 60,
+  NUMBER_90: 90,
+  NUMBER_120: 120,
+} as const
+export type GetWeeklyAvailability200 = {
+  pitch: PublicPitchSummary;
+  localStart: string;
+  /**
+     * @minimum 0
+     * @maximum 6
+     */
+  weekday: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  durationMinutes: number;
+  options: WeeklyOption[];
 };
 
 export type CreateHold200 = {
@@ -3821,6 +3882,64 @@ export const getPublicPitch = async (pitchId: string,
     params?: GetPublicPitchParams, options?: Parameters<typeof appFetch>[1]): Promise<getPublicPitchResponse> => {
 
   return appFetch<getPublicPitchResponse>(getGetPublicPitchUrl(pitchId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getWeeklyAvailabilityResponse200 = {
+  data: GetWeeklyAvailability200
+  status: 200
+}
+
+export type getWeeklyAvailabilityResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type getWeeklyAvailabilityResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getWeeklyAvailabilityResponseSuccess = (getWeeklyAvailabilityResponse200) & {
+  headers: Headers;
+};
+export type getWeeklyAvailabilityResponseError = (getWeeklyAvailabilityResponse400 | getWeeklyAvailabilityResponse404) & {
+  headers: Headers;
+};
+
+export type getWeeklyAvailabilityResponse = (getWeeklyAvailabilityResponseSuccess | getWeeklyAvailabilityResponseError)
+
+export const getGetWeeklyAvailabilityUrl = (pitchId: string,
+    params: GetWeeklyAvailabilityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/public/pitches/${pitchId}/weekly?${stringifiedParams}` : `/v1/public/pitches/${pitchId}/weekly`
+}
+
+/**
+ * No sign-in required.
+ * @summary Book again: the same weekday, kick-off and length over the coming weeks, each open or not, at today's prices
+ */
+export const getWeeklyAvailability = async (pitchId: string,
+    params: GetWeeklyAvailabilityParams, options?: Parameters<typeof appFetch>[1]): Promise<getWeeklyAvailabilityResponse> => {
+
+  return appFetch<getWeeklyAvailabilityResponse>(getGetWeeklyAvailabilityUrl(pitchId,params),
   {
     ...options,
     method: 'GET'
