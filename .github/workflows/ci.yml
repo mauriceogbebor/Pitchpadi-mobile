@@ -1,0 +1,33 @@
+name: CI
+
+# The same gate as pitchpadi-api and pitchpadi-fe (R6 review, 3 November):
+# every push and pull request must pass before it merges.
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Fails if src/api/generated.ts does not match the committed OpenAPI
+      # document (src/api/openapi.json, copied from pitchpadi-api by api:sync).
+      - run: npm run api:check
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      # Bundles the app (web target) to catch import and Metro resolution
+      # errors that typecheck alone misses. Native builds are gated in M5.
+      - run: npx expo export --platform web --output-dir dist
+        env:
+          EXPO_OFFLINE: "1"
+          EXPO_PUBLIC_API_URL: http://localhost:4000

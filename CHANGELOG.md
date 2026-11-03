@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-03 — CI (R6)
+
+- GitHub Actions CI on every push and pull request: `npm ci`, generated-client check, lint, format, typecheck, tests and a web bundle build. `npm run api:check` now regenerates from the committed contract (`src/api/openapi.json`) instead of the sibling API repo, so it runs in CI; `npm run api:sync` still copies from the API first.
+
 ## 2026-11-03 — Review fixes (0.8.1)
 
 - Play: when you change the day, area, time of day, Near me or filters, results for your previous choice no longer look like the new ones. Until the new results arrive, the screen says "Loading pitches for …", labels the old results ("Still showing …"), dims them and pauses booking from them. If the new results fail to load, you see the error, not old times.

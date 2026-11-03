@@ -53,7 +53,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "api:sync": "node scripts/api-sync.mjs",
-    "api:check": "node scripts/api-sync.mjs && git diff --exit-code -- src/api",
+    "api:generate": "orval --config orval.config.ts",
+    "api:check": "npm run api:generate && git diff --exit-code -- src/api",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --experimental-strip-types --no-warnings --test tests/*.test.ts"
