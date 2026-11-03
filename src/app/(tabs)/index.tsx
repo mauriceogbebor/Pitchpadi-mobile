@@ -23,6 +23,7 @@ import { DateStrip } from "@/components/date-strip";
 import { PitchBand } from "@/components/pitch-band";
 import { PlayAgain } from "@/components/play-again";
 import { Segmented } from "@/components/segmented";
+import { LoadingLine, StaleBanner } from "@/components/stale-banner";
 import {
   Body,
   Button,
@@ -44,6 +45,12 @@ import {
 } from "@/lib/format";
 import { formatDistance, nearParam } from "@/lib/geo";
 import { useMyBookings } from "@/lib/my-bookings";
+import {
+  type PlaySelection,
+  playSelectionKey,
+  playSelectionLabel,
+  resultsView,
+} from "@/lib/stale-results";
 import { useNearMe } from "@/lib/use-near-me";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -80,18 +87,36 @@ export default function PlayScreen() {
     },
     staleTime: 60 * 60 * 1000,
   });
+  const areaName = areas.data?.find((item) => item.slug === area)?.name;
+  // Nearest needs a location; until there is one, keep the best match.
+  const sort =
+    filters.sort === "nearest" && !near ? "recommended" : filters.sort;
+  const selection: PlaySelection = {
+    date,
+    area,
+    time,
+    type: filters.type,
+    maxPrice: filters.maxPrice,
+    sort,
+    near: near ?? null,
+  };
+  const selectionKey = playSelectionKey(selection);
   const search = useQuery({
-    queryKey: ["search", date, area, time, filters, near],
+    queryKey: ["search", selectionKey],
     queryFn: async () => {
+      // Remember what this answer is for, so it is never shown as the answer
+      // to a later choice (review of 3 November).
+      const tag = {
+        selectionKey,
+        selectionLabel: playSelectionLabel({ ...selection, areaName }, today),
+      };
       const response = await searchPitches({
         date,
         area: area ?? undefined,
         time,
         type: filters.type === "any" ? undefined : filters.type,
         maxPrice: filters.maxPrice ?? undefined,
-        // Nearest needs a location; until there is one, keep the best match.
-        sort:
-          filters.sort === "nearest" && !near ? "recommended" : filters.sort,
+        sort,
         near,
       });
       if (response.status !== 200)
@@ -99,12 +124,19 @@ export default function PlayScreen() {
           (response.data as { error?: string }).error ??
             "We could not load pitches.",
         );
-      return response.data;
+      return { ...response.data, ...tag };
     },
-    // Keep the last answer on screen while a new filter loads (slow networks).
+    // Keep the last answer on screen while a new choice loads (slow networks),
+    // but only labelled and with booking paused: see `view` below.
     placeholderData: (previous) => previous,
   });
 
+  const view = resultsView({
+    wanted: selectionKey,
+    shown: search.data,
+    isError: search.isError,
+  });
+  const stale = view.kind === "stale";
   const results = search.data?.results ?? [];
   const open = search.data?.openCount ?? 0;
   const filterCount = activeFilters(filters);
@@ -128,7 +160,6 @@ export default function PlayScreen() {
       if (!ok) setFilters({ ...next, sort: "recommended" });
     }
   }
-  const areaName = areas.data?.find((item) => item.slug === area)?.name;
   const day = dateParts(date);
 
   return (
@@ -221,9 +252,14 @@ export default function PlayScreen() {
           ) : null}
         </View>
 
-        {search.isPending ? (
-          <Skeleton height={176} count={3} />
-        ) : search.isError ? (
+        {view.kind === "loading" ? (
+          <View style={{ gap: space.md }}>
+            <LoadingLine
+              text={`Loading pitches for ${playSelectionLabel({ ...selection, areaName }, today)}`}
+            />
+            <Skeleton height={176} count={3} />
+          </View>
+        ) : view.kind === "error" ? (
           <Notice
             tone="danger"
             title="We could not load pitches"
@@ -235,31 +271,57 @@ export default function PlayScreen() {
               />
             }
           >
-            <Body>{search.error.message} Check your connection.</Body>
+            <Body>
+              {search.error?.message ?? "We could not load pitches."} Check your
+              connection.
+            </Body>
           </Notice>
         ) : (
           <Animated.View
-            key={`${date}:${area}:${time}:${JSON.stringify(filters)}:${near}`}
-            entering={reduce ? undefined : FadeIn.duration(180)}
+            key={search.data?.selectionKey}
+            entering={reduce || stale ? undefined : FadeIn.duration(180)}
             style={{ gap: space.md }}
           >
-            <Body tone="muted" accessibilityLiveRegion="polite">
-              <Body weight="semibold">
-                {open === 1 ? "1 pitch" : `${open} pitches`}
-              </Body>{" "}
-              open{" "}
-              {date === today
-                ? "today"
-                : `on ${day.weekday} ${day.day} ${day.month}`}
-              {areaName ? ` in ${areaName}` : " across Lagos"}
-              {filters.sort !== "recommended" &&
-              (filters.sort !== "nearest" || near)
-                ? `, ${SORT_LABEL[filters.sort].toLowerCase()} first`
-                : near
-                  ? ", nearest first"
-                  : ""}
-            </Body>
-            {results.length === 0 ? (
+            {stale ? (
+              <StaleBanner
+                loading={`Loading pitches for ${playSelectionLabel({ ...selection, areaName }, today)}`}
+                showing={`Still showing ${view.label}. Booking is paused until the new times arrive.`}
+              />
+            ) : (
+              <Body tone="muted" accessibilityLiveRegion="polite">
+                <Body weight="semibold">
+                  {open === 1 ? "1 pitch" : `${open} pitches`}
+                </Body>{" "}
+                open{" "}
+                {date === today
+                  ? "today"
+                  : `on ${day.weekday} ${day.day} ${day.month}`}
+                {areaName ? ` in ${areaName}` : " across Lagos"}
+                {filters.sort !== "recommended" &&
+                (filters.sort !== "nearest" || near)
+                  ? `, ${SORT_LABEL[filters.sort].toLowerCase()} first`
+                  : near
+                    ? ", nearest first"
+                    : ""}
+              </Body>
+            )}
+            {stale ? (
+              <View
+                style={styles.stale}
+                aria-hidden
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                {results.map((result) => (
+                  <PitchCard
+                    key={result.pitch.id}
+                    result={result}
+                    date={date}
+                    disabled
+                  />
+                ))}
+              </View>
+            ) : results.length === 0 ? (
               <Notice
                 title={
                   filterCount
@@ -408,9 +470,12 @@ function NextGame() {
 function PitchCard({
   result,
   date,
+  disabled = false,
 }: {
   result: PitchAvailability;
   date: string;
+  /** Results from an earlier selection: shown, not bookable. */
+  disabled?: boolean;
 }) {
   const colors = useColors();
   const { pitch, startTimes } = result;
@@ -425,6 +490,7 @@ function PitchCard({
   return (
     <Press
       onPress={() => open()}
+      disabled={disabled}
       scaleTo={0.985}
       accessibilityRole="button"
       accessibilityLabel={`${pitch.facilityName}, ${pitch.name}. Open the pitch`}
@@ -476,6 +542,7 @@ function PitchCard({
                 label={start.localStart}
                 accessibilityLabel={`Kick off at ${start.localStart} at ${pitch.facilityName}`}
                 onPress={() => open(start.startsAt)}
+                disabled={disabled}
               />
             ))}
             {more > 0 && (
@@ -483,6 +550,7 @@ function PitchCard({
                 accessibilityRole="button"
                 accessibilityLabel={`${more} more times at ${pitch.facilityName}`}
                 onPress={() => open()}
+                disabled={disabled}
                 style={[styles.more, { borderColor: colors.border }]}
               >
                 <Body tone="link" weight="semibold">
@@ -530,4 +598,5 @@ const styles = StyleSheet.create({
   },
   shortcut: { flexDirection: "row", alignItems: "center", gap: space.md },
   tools: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
+  stale: { gap: space.md, opacity: 0.45 },
 });

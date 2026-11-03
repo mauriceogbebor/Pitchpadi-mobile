@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-03 — Review fixes (0.8.1)
+
+- Play: when you change the day, area, time of day, Near me or filters, results for your previous choice no longer look like the new ones. Until the new results arrive, the screen says "Loading pitches for …", labels the old results ("Still showing …"), dims them and pauses booking from them. If the new results fail to load, you see the error, not old times.
+- Venue pages do the same when you change the day.
+- Map pin: a pasted link with a broken "%" code no longer crashes the screen; you get the usual "Paste coordinates like 6.4474, 3.4723…" message.
+
 ## 2026-11-03 — RB-01 Book again (0.8.0)
 
 - **Play again** on Play: your regular games (same pitch, day, time and length), newest first, one tap away.

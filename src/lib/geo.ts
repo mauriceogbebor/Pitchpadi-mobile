@@ -23,6 +23,15 @@ export function nearParam(point: Point): string {
   return `${rough.latitude},${rough.longitude}`;
 }
 
+/** decodeURIComponent, or null when the text has a malformed % escape. */
+function safeDecode(text: string): string | null {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return null;
+  }
+}
+
 const PAIR = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/;
 
 /**
@@ -32,7 +41,11 @@ const PAIR = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/;
  * they return null and the screen asks for the numbers instead.
  */
 export function parsePoint(text: string): Point | null {
-  const value = decodeURIComponent(text.trim());
+  const value = safeDecode(text.trim());
+  // A link with a broken escape ("%zz", a cut-off "%E2%8") cannot be read
+  // reliably: return null so the screen shows its usual "paste coordinates"
+  // message instead of crashing (review of 3 November).
+  if (value === null) return null;
   const pin = value.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
   const at = value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   const pair = pin ?? at ?? value.match(PAIR);

@@ -97,11 +97,14 @@ export function TimeChip({
   selected = false,
   onPress,
   accessibilityLabel,
+  disabled = false,
 }: {
   label: string;
   selected?: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
+  /** For times that may be out of date (still loading the new selection). */
+  disabled?: boolean;
 }) {
   const colors = useColors();
   const reduce = useReducedMotion();
@@ -122,10 +125,12 @@ export function TimeChip({
     <Animated.View style={animated}>
       <Press
         accessibilityRole="button"
-        accessibilityState={{ selected }}
+        accessibilityState={{ selected, disabled }}
         aria-selected={selected}
+        aria-disabled={disabled}
         accessibilityLabel={accessibilityLabel ?? label}
         onPress={onPress}
+        disabled={disabled}
         style={[
           styles.time,
           {

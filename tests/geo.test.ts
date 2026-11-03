@@ -50,3 +50,23 @@ test("directions go to the exact pin", () => {
     "https://www.google.com/maps/dir/?api=1&destination=6.4474,3.4723",
   );
 });
+
+test("malformed percent escapes in pasted links never throw, they return null", () => {
+  for (const text of [
+    "https://www.google.com/maps/search/?api=1&query=6.4474%2C3.4723%",
+    "https://www.google.com/maps/@6.4474,3.4723,17z?entry=%zz",
+    "https://maps.google.com/?q=6.4474%2C3.4723&hl=%E2%8",
+    "%",
+    "6.4474, 3.4723 %G1",
+  ]) {
+    assert.doesNotThrow(() => parsePoint(text), text);
+    assert.equal(parsePoint(text), null, text);
+  }
+  // Well-formed escapes still work.
+  assert.deepEqual(
+    parsePoint(
+      "https://www.google.com/maps/search/?api=1&query=6.4474%2C3.4723",
+    ),
+    { latitude: 6.4474, longitude: 3.4723 },
+  );
+});

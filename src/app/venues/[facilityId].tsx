@@ -18,7 +18,9 @@ import {
   Section,
   Skeleton,
 } from "@/components/ui";
+import { StaleBanner } from "@/components/stale-banner";
 import { venueAmenities } from "@/lib/amenities";
+import { dayLabel, resultsView } from "@/lib/stale-results";
 import { dateParts, formatNaira, lagosToday, nextDates } from "@/lib/format";
 import {
   openDirections,
@@ -59,6 +61,19 @@ export default function VenueProfileScreen() {
     placeholderData: (previous) => previous,
   });
 
+  // The answer says which venue and day it is for; anything else on screen is
+  // an earlier day kept while the new one loads (review of 3 November).
+  const view = resultsView({
+    wanted: `${params.facilityId}:${date}`,
+    shown: venue.data
+      ? {
+          selectionKey: `${venue.data.venue.id}:${venue.data.date}`,
+          selectionLabel: dayLabel(venue.data.date, today),
+        }
+      : undefined,
+    isError: venue.isError,
+  });
+  const stale = view.kind === "stale";
   const info = venue.data?.venue;
   const pitches = venue.data?.pitches ?? [];
   const amenities = info ? venueAmenities(info.amenities) : [];
@@ -170,17 +185,60 @@ export default function VenueProfileScreen() {
                   today={today}
                   onChange={setDate}
                 />
-                <Body tone="muted" accessibilityLiveRegion="polite">
-                  <Body weight="semibold">
-                    {open === 1 ? "1 pitch" : `${open} pitches`}
-                  </Body>{" "}
-                  open {date === today ? "today" : `on ${day.long}`}
-                </Body>
+                {view.kind === "fresh" ? (
+                  <Body tone="muted" accessibilityLiveRegion="polite">
+                    <Body weight="semibold">
+                      {open === 1 ? "1 pitch" : `${open} pitches`}
+                    </Body>{" "}
+                    open {date === today ? "today" : `on ${day.long}`}
+                  </Body>
+                ) : view.kind === "stale" ? (
+                  <StaleBanner
+                    loading={`Loading times for ${dayLabel(date, today)}`}
+                    showing={`Still showing ${view.label}. Booking is paused until the new times arrive.`}
+                  />
+                ) : view.kind === "error" ? (
+                  <Notice
+                    tone="danger"
+                    title={`We could not load times for ${dayLabel(date, today)}`}
+                    action={
+                      <Button
+                        variant="outline"
+                        label="Try again"
+                        onPress={() => void venue.refetch()}
+                      />
+                    }
+                  >
+                    <Body>Check your connection.</Body>
+                  </Notice>
+                ) : null}
               </Section>
 
-              {pitches.map((result) => (
-                <VenuePitch key={result.pitch.id} result={result} date={date} />
-              ))}
+              {view.kind === "fresh" ? (
+                pitches.map((result) => (
+                  <VenuePitch
+                    key={result.pitch.id}
+                    result={result}
+                    date={date}
+                  />
+                ))
+              ) : stale ? (
+                <View
+                  style={styles.stale}
+                  aria-hidden
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  {pitches.map((result) => (
+                    <VenuePitch
+                      key={result.pitch.id}
+                      result={result}
+                      date={date}
+                      disabled
+                    />
+                  ))}
+                </View>
+              ) : null}
             </>
           )
         )}
@@ -192,9 +250,12 @@ export default function VenueProfileScreen() {
 function VenuePitch({
   result,
   date,
+  disabled = false,
 }: {
   result: PitchAvailability;
   date: string;
+  /** Times from an earlier day: shown, not bookable. */
+  disabled?: boolean;
 }) {
   const colors = useColors();
   const { pitch, startTimes } = result;
@@ -211,6 +272,7 @@ function VenuePitch({
         accessibilityRole="button"
         accessibilityLabel={`${pitch.name}, ${pitch.type}. Open the pitch`}
         onPress={() => open()}
+        disabled={disabled}
         style={styles.pitchTop}
       >
         <View style={{ flex: 1, gap: 2 }}>
@@ -237,6 +299,7 @@ function VenuePitch({
               label={start.localStart}
               accessibilityLabel={`Kick off at ${start.localStart} on ${pitch.name}`}
               onPress={() => open(start.startsAt)}
+              disabled={disabled}
             />
           ))}
           {more > 0 && (
@@ -244,6 +307,7 @@ function VenuePitch({
               accessibilityRole="button"
               accessibilityLabel={`${more} more times on ${pitch.name}`}
               onPress={() => open()}
+              disabled={disabled}
               style={[styles.more, { borderColor: colors.border }]}
             >
               <Body tone="link" weight="semibold">
@@ -276,6 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
   },
+  stale: { gap: space.xl, opacity: 0.45 },
   pitchTop: { flexDirection: "row", alignItems: "center", gap: space.md },
   more: {
     minHeight: 48,
