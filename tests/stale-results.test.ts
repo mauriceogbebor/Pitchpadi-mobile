@@ -9,6 +9,7 @@ import {
 
 const base: PlaySelection = {
   date: "2026-11-04",
+  duration: 60,
   area: null,
   time: "any",
   type: "any",
@@ -34,6 +35,7 @@ test("any change of date, area, time, location or filters makes shown results st
   const changes: Partial<PlaySelection>[] = [
     { date: "2026-11-05" },
     { area: "lekki" },
+    { duration: 90 },
     { time: "evening" },
     { near: "6.45,3.47" },
     { type: "7-a-side" },
@@ -104,11 +106,11 @@ test("stale results are labelled with what they were for", () => {
   const today = "2026-11-03";
   assert.equal(
     playSelectionLabel({ ...base, date: today }, today),
-    "today across Lagos",
+    "today across Lagos, 1 hour",
   );
   assert.equal(
     playSelectionLabel({ ...base, date: "2026-11-04" }, today),
-    "tomorrow across Lagos",
+    "tomorrow across Lagos, 1 hour",
   );
   assert.equal(
     playSelectionLabel(
@@ -123,6 +125,6 @@ test("stale results are labelled with what they were for", () => {
       },
       today,
     ),
-    "Fri 6 Nov in Lekki, evening, with filters, near you",
+    "Fri 6 Nov in Lekki, 1 hour, evening, with filters, near you",
   );
 });

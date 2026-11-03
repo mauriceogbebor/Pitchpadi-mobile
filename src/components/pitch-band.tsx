@@ -32,7 +32,7 @@ export function PitchBand({
         height="100%"
         viewBox="0 0 400 220"
         preserveAspectRatio="xMidYMid slice"
-        accessible={false}
+        aria-hidden
       >
         {Array.from({ length: STRIPES }, (_, i) =>
           i % 2 ? (

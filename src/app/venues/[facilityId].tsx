@@ -20,7 +20,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { StaleBanner } from "@/components/stale-banner";
-import { venueAmenities } from "@/lib/amenities";
+import { AmenitiesSummary } from "@/components/amenities-summary";
 import { dayLabel, resultsView } from "@/lib/stale-results";
 import { dateParts, lagosToday, nextDates } from "@/lib/format";
 import {
@@ -77,7 +77,6 @@ export default function VenueProfileScreen() {
   const stale = view.kind === "stale";
   const info = venue.data?.venue;
   const pitches = venue.data?.pitches ?? [];
-  const amenities = info ? venueAmenities(info.amenities) : [];
   const day = dateParts(date);
   const open = pitches.filter((p) => p.startTimes.length > 0).length;
 
@@ -156,29 +155,6 @@ export default function VenueProfileScreen() {
                 </View>
               </PitchBand>
 
-              {amenities.length > 0 && (
-                <Section title="At the venue">
-                  <View style={styles.wrap}>
-                    {amenities.map((item) => (
-                      <View
-                        key={item.value}
-                        style={[
-                          styles.amenity,
-                          { backgroundColor: colors.muted },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon}
-                          size={17}
-                          color={colors.link}
-                        />
-                        <Body size={15}>{item.label}</Body>
-                      </View>
-                    ))}
-                  </View>
-                </Section>
-              )}
-
               <Section title="Pick a day">
                 <DateStrip
                   days={days}
@@ -240,6 +216,7 @@ export default function VenueProfileScreen() {
                   ))}
                 </View>
               ) : null}
+              <AmenitiesSummary amenities={info.amenities} />
             </>
           )
         )}
@@ -324,14 +301,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.35)",
   },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  amenity: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: radius.pill,
-    paddingHorizontal: space.md,
-    paddingVertical: 6,
-  },
   stale: { gap: space.xl, opacity: 0.45 },
   pitchTop: { flexDirection: "row", alignItems: "center", gap: space.md },
   more: {

@@ -37,6 +37,7 @@ export function resultsView(input: {
 
 export type PlaySelection = {
   date: string;
+  duration: 60 | 90 | 120;
   area: string | null;
   time: string;
   type: string;
@@ -49,6 +50,7 @@ export type PlaySelection = {
 export function playSelectionKey(selection: PlaySelection): string {
   return JSON.stringify([
     selection.date,
+    selection.duration,
     selection.area,
     selection.time,
     selection.type,
@@ -80,6 +82,13 @@ export function playSelectionLabel(
       selection.areaName ? ` in ${selection.areaName}` : " across Lagos"
     }`,
   ];
+  parts.push(
+    selection.duration === 60
+      ? "1 hour"
+      : selection.duration === 90
+        ? "1½ hours"
+        : "2 hours",
+  );
   if (selection.time !== "any") parts.push(selection.time);
   if (
     selection.type !== "any" ||

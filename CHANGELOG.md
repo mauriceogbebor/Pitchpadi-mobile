@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-03 — Compact discovery (0.10.0, CD-01)
+
+- Play groups loaded pitches by venue, with a pitch selector, a short area/distance line and exact available prices. Pagination still reaches every pitch.
+- Search Lagos areas in a bottom sheet instead of scrolling a long row. Choose 1 hour, 1½ hours or 2 hours before comparing; that length is filtered by the API and carried into the pitch page and hold.
+- The header is smaller and shows one return shortcut: unfinished checkout, next game, or a compact Play again.
+- Pitch and venue pages put available times before an expandable amenities summary. A selected game length is never silently replaced by another when it becomes unavailable.
+- Accessible selection/expanded states and reduced motion are preserved; the decorative pitch graphic no longer produces a web accessibility-attribute warning.
+
 ## 2026-11-03 — R7 fixes (0.9.0)
 
 - **All results reachable:** Play shows "Showing 20 of 50 pitches" and a "Show more pitches" button that loads the next 20 for the same choice, until every match is shown. Results from an earlier choice stay labelled and locked as before.

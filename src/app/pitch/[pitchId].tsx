@@ -23,7 +23,7 @@ import {
   Section,
   Skeleton,
 } from "@/components/ui";
-import { venueAmenities } from "@/lib/amenities";
+import { AmenitiesSummary } from "@/components/amenities-summary";
 import {
   addDays,
   dateParts,
@@ -46,11 +46,16 @@ export default function PitchScreen() {
     pitchId: string;
     date?: string;
     start?: string;
+    duration?: string;
   }>();
   const today = lagosToday();
   const [date, setDate] = useState(params.date ?? today);
   const [start, setStart] = useState<string | null>(params.start ?? null);
-  const [duration, setDuration] = useState<number | null>(null);
+  const [duration, setDuration] = useState<number | null>(
+    ["60", "90", "120"].includes(params.duration ?? "")
+      ? Number(params.duration)
+      : null,
+  );
 
   const pitch = useQuery({
     queryKey: ["pitch", params.pitchId, date],
@@ -70,15 +75,20 @@ export default function PitchScreen() {
     (item) => item.startsAt === start,
   );
   const option: SlotOption | undefined =
-    chosen?.options.find((item) => item.durationMinutes === duration) ??
-    chosen?.options[0];
+    duration === null
+      ? chosen?.options[0]
+      : chosen?.options.find((item) => item.durationMinutes === duration);
+  const matchingTimes = (pitch.data?.startTimes ?? []).filter(
+    (item) =>
+      duration === null ||
+      item.options.some((offer) => offer.durationMinutes === duration),
+  );
 
   // A chosen time that is no longer open (just taken) simply drops out: `chosen`
   // is then undefined and the hold bar hides.
 
   const days = useMemo(() => nextDates(today, 14), [today]);
   const info = pitch.data?.pitch;
-  const amenities = info ? venueAmenities(info.amenities) : [];
 
   const slot = useHoldSlot(() => void pitch.refetch());
   const holding = slot.holding;
@@ -175,29 +185,6 @@ export default function PitchScreen() {
                 </View>
               </PitchBand>
 
-              {amenities.length > 0 && (
-                <Section title="At the venue">
-                  <View style={styles.wrap}>
-                    {amenities.map((item) => (
-                      <View
-                        key={item.value}
-                        style={[
-                          styles.amenity,
-                          { backgroundColor: colors.muted },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon}
-                          size={17}
-                          color={colors.link}
-                        />
-                        <Body size={15}>{item.label}</Body>
-                      </View>
-                    ))}
-                  </View>
-                </Section>
-              )}
-
               <Section title="Pick a time">
                 <DateStrip
                   days={days}
@@ -209,21 +196,36 @@ export default function PitchScreen() {
                     setError(null);
                   }}
                 />
-                <Body tone="muted">Kick-off on {day.long}</Body>
-                {pitch.data.startTimes.length === 0 ? (
+                <Body tone="muted">
+                  Kick-off on {day.long}
+                  {duration !== null ? ` · ${formatDuration(duration)}` : ""}
+                </Body>
+                {matchingTimes.length === 0 ? (
                   <Notice
-                    title="No open times on this day"
+                    title={
+                      pitch.data.startTimes.length
+                        ? "No open times for this game length"
+                        : "No open times on this day"
+                    }
                     action={
                       <Button
                         variant="outline"
-                        label="Try the next day"
-                        onPress={() => setDate(addDays(date, 1))}
+                        label={
+                          pitch.data.startTimes.length
+                            ? "See all game lengths"
+                            : "Try the next day"
+                        }
+                        onPress={() =>
+                          pitch.data.startTimes.length
+                            ? setDuration(null)
+                            : setDate(addDays(date, 1))
+                        }
                       />
                     }
                   />
                 ) : (
                   <View style={styles.wrap}>
-                    {pitch.data.startTimes.map((item) => (
+                    {matchingTimes.map((item) => (
                       <TimeChip
                         key={item.startsAt}
                         label={item.localStart}
@@ -242,6 +244,12 @@ export default function PitchScreen() {
               {chosen && (
                 <Section title="How long?">
                   <View style={{ gap: space.sm }}>
+                    {!option && (
+                      <Body tone="muted">
+                        Your selected length is not available at this time.
+                        Choose another length or time.
+                      </Body>
+                    )}
                     {chosen.options.map((item) => {
                       const selected =
                         item.durationMinutes === option?.durationMinutes;
@@ -250,6 +258,7 @@ export default function PitchScreen() {
                           key={item.durationMinutes}
                           scaleTo={0.985}
                           accessibilityRole="radio"
+                          accessibilityLabel={`${formatDuration(item.durationMinutes)}, ${formatNaira(item.amountMinor)}, ${chosen.localStart} to ${item.localEnd}${item.endsNextDay ? " next day" : ""}`}
                           accessibilityState={{ checked: selected }}
                           aria-checked={selected}
                           onPress={() => setDuration(item.durationMinutes)}
@@ -292,6 +301,8 @@ export default function PitchScreen() {
                   </View>
                 </Section>
               )}
+
+              <AmenitiesSummary amenities={info.amenities} />
 
               {info.cancellationPolicy && (
                 <Card variant="flat">
@@ -361,14 +372,6 @@ const styles = StyleSheet.create({
   },
   bandActions: { flexDirection: "row", gap: space.sm, marginTop: space.sm },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  amenity: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: radius.pill,
-    paddingHorizontal: space.md,
-    paddingVertical: 6,
-  },
   option: {
     flexDirection: "row",
     alignItems: "center",

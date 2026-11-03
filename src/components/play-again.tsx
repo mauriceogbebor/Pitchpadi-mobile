@@ -14,11 +14,46 @@ const MAX = 4;
 /**
  * Play again (RB-01): the player's regular games, one tap from "Book again".
  */
-export function PlayAgain() {
+export function PlayAgain({ compact = false }: { compact?: boolean }) {
   const colors = useColors();
   const bookings = useMyBookings();
-  const games = regularGames(bookings.data?.past ?? [], MAX);
+  const games = regularGames(bookings.data?.past ?? [], compact ? 1 : MAX);
   if (!games.length) return null;
+  if (compact) {
+    const game = games[0];
+    const weekday =
+      WEEKDAYS[new Date(`${game.localDate}T12:00:00Z`).getUTCDay()];
+    return (
+      <Press
+        accessibilityRole="button"
+        accessibilityLabel={`Book again at ${game.pitch.facilityName}, ${weekday} ${game.localStart}`}
+        onPress={() =>
+          router.push({
+            pathname: "/rebook",
+            params: {
+              pitchId: game.pitch.id,
+              startsAt: game.startsAt,
+              duration: String(game.durationMinutes),
+            },
+          })
+        }
+      >
+        <Card
+          style={{ flexDirection: "row", alignItems: "center", gap: space.md }}
+        >
+          <Ionicons name="repeat" size={24} color={colors.link} />
+          <View style={{ flex: 1 }}>
+            <Body weight="semibold">Play again</Body>
+            <Body tone="muted" size={14} numberOfLines={1}>
+              {game.pitch.facilityName} · {weekday} {game.localStart}
+            </Body>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </Card>
+      </Press>
+    );
+  }
+
   return (
     <Section title="Play again">
       <ScrollView

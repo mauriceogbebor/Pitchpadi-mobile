@@ -5,12 +5,8 @@ import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  listAreas,
-  searchPitches,
-  type PitchAvailability,
-} from "@/api/generated";
-import { Chip, TimeChip } from "@/components/chips";
+import { listAreas, searchPitches } from "@/api/generated";
+import { Chip } from "@/components/chips";
 import {
   activeFilters,
   FilterSheet,
@@ -20,7 +16,8 @@ import {
 } from "@/components/filter-sheet";
 import { DateBlock } from "@/components/date-block";
 import { DateStrip } from "@/components/date-strip";
-import { OfferPrice } from "@/components/offer-price";
+import { AreaPicker } from "@/components/area-picker";
+import { VenueResultCard } from "@/components/venue-result-card";
 import { PitchBand } from "@/components/pitch-band";
 import { PlayAgain } from "@/components/play-again";
 import { Segmented } from "@/components/segmented";
@@ -43,7 +40,7 @@ import {
   TIMES_OF_DAY,
   type TimeOfDay,
 } from "@/lib/format";
-import { formatDistance, nearParam } from "@/lib/geo";
+import { nearParam } from "@/lib/geo";
 import { useDeviceCheckouts } from "@/lib/use-device-checkouts";
 import { useMyBookings } from "@/lib/my-bookings";
 import {
@@ -52,12 +49,12 @@ import {
   playSelectionLabel,
   resultsView,
 } from "@/lib/stale-results";
+import { groupVenues } from "@/lib/discovery";
 import { mergePages, shownLine } from "@/lib/search-pages";
 import { useNearMe } from "@/lib/use-near-me";
-import { radius, space } from "@/theme/tokens";
+import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
-const TIMES_PER_PITCH = 6;
 const TIME_OPTIONS = TIMES_OF_DAY.map((item) => ({
   value: item.value,
   label: item.value === "any" ? "Any time" : item.label,
@@ -74,6 +71,8 @@ export default function PlayScreen() {
   const today = lagosToday();
   const days = useMemo(() => nextDates(today, 14), [today]);
   const [date, setDate] = useState(today);
+  const [duration, setDuration] = useState<60 | 90 | 120>(60);
+  const [areaOpen, setAreaOpen] = useState(false);
   const [area, setArea] = useState<string | null>(null);
   const [time, setTime] = useState<TimeOfDay>("any");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -85,7 +84,8 @@ export default function PlayScreen() {
     queryKey: ["areas"],
     queryFn: async () => {
       const response = await listAreas();
-      return response.status === 200 ? response.data.areas : [];
+      if (response.status !== 200) throw new Error("We could not load areas.");
+      return response.data.areas;
     },
     staleTime: 60 * 60 * 1000,
   });
@@ -95,6 +95,7 @@ export default function PlayScreen() {
     filters.sort === "nearest" && !near ? "recommended" : filters.sort;
   const selection: PlaySelection = {
     date,
+    duration,
     area,
     time,
     type: filters.type,
@@ -114,6 +115,7 @@ export default function PlayScreen() {
       };
       const response = await searchPitches({
         date,
+        duration,
         area: area ?? undefined,
         time,
         type: filters.type === "any" ? undefined : filters.type,
@@ -147,6 +149,7 @@ export default function PlayScreen() {
   const stale = view.kind === "stale";
   const merged = mergePages(pages);
   const results = merged.results;
+  const venues = groupVenues(results);
   const open = merged.openCount;
   const partial = shownLine(results.length, merged.matched);
   const filterCount = activeFilters(filters);
@@ -186,12 +189,9 @@ export default function PlayScreen() {
           />
         }
       >
-        <PitchBand>
+        <PitchBand contentStyle={{ padding: space.lg, gap: space.sm }}>
           <Heading style={{ color: colors.onBand }}>Find a pitch</Heading>
-          <Body tone="onBandMuted">
-            Open 5-a-side and 7-a-side pitches across Lagos, with real prices.
-          </Body>
-          <View style={{ marginTop: space.md }}>
+          <View>
             <DateStrip
               days={days}
               value={date}
@@ -203,36 +203,33 @@ export default function PlayScreen() {
         </PitchBand>
 
         <NextGame />
-        <PlayAgain />
 
         <View style={{ gap: space.md }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: space.sm }}
-            accessibilityLabel="Area"
-          >
-            <Chip
-              label="All of Lagos"
-              selected={!area}
-              onPress={() => setArea(null)}
-            />
-            {(areas.data ?? []).map((item) => (
-              <Chip
-                key={item.slug}
-                label={item.name}
-                selected={area === item.slug}
-                onPress={() => setArea(item.slug)}
-              />
-            ))}
-          </ScrollView>
-          <Segmented
-            label="Time of day"
-            options={TIME_OPTIONS}
-            value={time}
-            onChange={setTime}
-          />
           <View style={styles.tools}>
+            <Press
+              accessibilityRole="button"
+              accessibilityLabel={`Choose area. ${areaName ?? "All of Lagos"}`}
+              onPress={() => setAreaOpen(true)}
+              style={[
+                styles.area,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Ionicons name="location-outline" size={17} color={colors.link} />
+              <Body
+                weight="semibold"
+                size={15}
+                numberOfLines={1}
+                style={{ flex: 1 }}
+              >
+                {areaName ?? "All of Lagos"}
+              </Body>
+              <Ionicons
+                name="chevron-down"
+                size={14}
+                color={colors.textMuted}
+              />
+            </Press>
             <Chip
               icon={nearMe.status === "on" ? "navigate" : "navigate-outline"}
               label="Near me"
@@ -245,14 +242,46 @@ export default function PlayScreen() {
                   : "Show distances from where you are"
               }
             />
-            <Chip
-              icon="options-outline"
-              label={filterCount ? `Filters (${filterCount})` : "Filters"}
-              selected={filterCount > 0}
+            <Press
+              accessibilityRole="button"
               onPress={() => setSheetOpen(true)}
               accessibilityLabel={`Filters${filterCount ? `, ${filterCount} on` : ""}. Sort, pitch size and budget`}
-            />
+              style={[
+                styles.filter,
+                {
+                  borderColor: filterCount ? colors.primary : colors.border,
+                  backgroundColor: filterCount ? colors.primary : colors.card,
+                },
+              ]}
+            >
+              <Ionicons
+                name="options-outline"
+                size={20}
+                color={filterCount ? colors.onPrimary : colors.text}
+              />
+              {filterCount > 0 && (
+                <Body size={12} weight="semibold" tone="onPrimary">
+                  {filterCount}
+                </Body>
+              )}
+            </Press>
           </View>
+          <Segmented
+            label="Game length"
+            options={[
+              { value: "60", label: "1 hour" },
+              { value: "90", label: "1½ hours" },
+              { value: "120", label: "2 hours" },
+            ]}
+            value={String(duration)}
+            onChange={(value) => setDuration(Number(value) as 60 | 90 | 120)}
+          />
+          <Segmented
+            label="Time of day"
+            options={TIME_OPTIONS}
+            value={time}
+            onChange={setTime}
+          />
           {nearMe.status === "denied" || nearMe.status === "unavailable" ? (
             <Body tone="muted" size={14} accessibilityLiveRegion="polite">
               {nearMe.status === "denied"
@@ -322,11 +351,12 @@ export default function PlayScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                {results.map((result) => (
-                  <PitchCard
-                    key={result.pitch.id}
-                    result={result}
+                {venues.map((venue) => (
+                  <VenueResultCard
+                    key={venue.id}
+                    results={venue.pitches}
                     date={date}
+                    duration={duration}
                     disabled
                   />
                 ))}
@@ -336,7 +366,7 @@ export default function PlayScreen() {
                 title={
                   filterCount
                     ? "No pitches match these filters"
-                    : `No pitches listed${areaName ? ` in ${areaName}` : ""} yet`
+                    : "No open games for this search"
                 }
                 action={
                   filterCount ? (
@@ -351,13 +381,19 @@ export default function PlayScreen() {
                       label="Show all of Lagos"
                       onPress={() => setArea(null)}
                     />
-                  ) : undefined
+                  ) : (
+                    <Button
+                      variant="outline"
+                      label="Try the next day"
+                      onPress={() => setDate(addDays(date, 1))}
+                    />
+                  )
                 }
               >
                 <Body tone="muted">
                   {filterCount
-                    ? "Try a higher budget or any pitch size."
-                    : "Try another day or area."}
+                    ? "Try a different game length, higher budget or any pitch size."
+                    : "Try another day, area or game length."}
                 </Body>
               </Notice>
             ) : (
@@ -379,11 +415,12 @@ export default function PlayScreen() {
                     />
                   </Card>
                 ) : null}
-                {results.map((result) => (
-                  <PitchCard
-                    key={result.pitch.id}
-                    result={result}
+                {venues.map((venue) => (
+                  <VenueResultCard
+                    key={venue.id}
+                    results={venue.pitches}
                     date={date}
+                    duration={duration}
                   />
                 ))}
                 {partial ? (
@@ -434,6 +471,17 @@ export default function PlayScreen() {
         onChange={(next) => void changeFilters(next)}
         onClose={() => setSheetOpen(false)}
       />
+      {areaOpen && (
+        <AreaPicker
+          areas={areas.data ?? []}
+          value={area}
+          onChange={setArea}
+          onClose={() => setAreaOpen(false)}
+          loading={areas.isPending}
+          error={areas.isError}
+          onRetry={() => void areas.refetch()}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -452,7 +500,7 @@ function NextGame() {
   );
   const unfinished = bookings.data?.inProgress[0] ?? device.data?.resume[0];
   const next = bookings.data?.upcoming[0];
-  if (!unfinished && !next) return null;
+  if (!unfinished && !next) return <PlayAgain compact />;
   const today = lagosToday();
   const label = (date: string) =>
     date === today
@@ -522,127 +570,30 @@ function NextGame() {
   );
 }
 
-function PitchCard({
-  result,
-  date,
-  disabled = false,
-}: {
-  result: PitchAvailability;
-  date: string;
-  /** Results from an earlier selection: shown, not bookable. */
-  disabled?: boolean;
-}) {
-  const colors = useColors();
-  const { pitch, startTimes } = result;
-  const shown = startTimes.slice(0, TIMES_PER_PITCH);
-  const more = startTimes.length - shown.length;
-  const floodlit = pitch.amenities.includes("floodlights");
-  const open = (start?: string) =>
-    router.push({
-      pathname: "/pitch/[pitchId]",
-      params: { pitchId: pitch.id, date, ...(start ? { start } : {}) },
-    });
-  return (
-    <Press
-      onPress={() => open()}
-      disabled={disabled}
-      scaleTo={0.985}
-      accessibilityRole="button"
-      accessibilityLabel={`${pitch.facilityName}, ${pitch.name}. Open the pitch`}
-    >
-      <Card style={{ gap: space.md }}>
-        <View style={styles.cardTop}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Heading level={3}>{pitch.facilityName}</Heading>
-            <Body tone="muted">
-              {pitch.name}, {pitch.type}
-            </Body>
-          </View>
-          <OfferPrice startTimes={startTimes} />
-        </View>
-        <View style={styles.meta}>
-          <Ionicons name="location-outline" size={16} color={colors.link} />
-          <Body size={15} style={{ flex: 1 }} numberOfLines={2}>
-            {result.distanceKm !== null ? (
-              <Body size={15} weight="semibold" numeric>
-                {formatDistance(result.distanceKm)},{" "}
-              </Body>
-            ) : null}
-            {pitch.areaName}, {pitch.address}
-            {pitch.landmark ? `, ${pitch.landmark}` : ""}
-          </Body>
-        </View>
-        {floodlit && (
-          <View style={[styles.badge, { backgroundColor: colors.muted }]}>
-            <Ionicons name="bulb-outline" size={14} color={colors.link} />
-            <Body size={13} weight="semibold">
-              Floodlit
-            </Body>
-          </View>
-        )}
-        {startTimes.length ? (
-          <View style={styles.times}>
-            {shown.map((start) => (
-              <TimeChip
-                key={start.startsAt}
-                label={start.localStart}
-                accessibilityLabel={`Kick off at ${start.localStart} at ${pitch.facilityName}`}
-                onPress={() => open(start.startsAt)}
-                disabled={disabled}
-              />
-            ))}
-            {more > 0 && (
-              <Press
-                accessibilityRole="button"
-                accessibilityLabel={`${more} more times at ${pitch.facilityName}`}
-                onPress={() => open()}
-                disabled={disabled}
-                style={[styles.more, { borderColor: colors.border }]}
-              >
-                <Body tone="link" weight="semibold">
-                  +{more} more
-                </Body>
-              </Press>
-            )}
-          </View>
-        ) : (
-          <Body tone="muted">No open times at this time of day.</Body>
-        )}
-      </Card>
-    </Press>
-  );
-}
-
 const styles = StyleSheet.create({
-  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.xl },
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: space.md,
-  },
-  meta: { flexDirection: "row", gap: space.xs, alignItems: "flex-start" },
-  badge: {
+  content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
+  shortcut: { flexDirection: "row", alignItems: "center", gap: space.md },
+  tools: { flexDirection: "row", gap: space.sm, alignItems: "center" },
+  area: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: TAP,
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 4,
-    borderRadius: radius.pill,
-    paddingHorizontal: space.sm + 2,
-    paddingVertical: 3,
-    marginTop: -space.xs,
-  },
-  times: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  more: {
-    minHeight: 48,
-    minWidth: 92,
-    borderRadius: radius.md,
+    gap: space.xs,
+    paddingHorizontal: space.md,
     borderWidth: 1,
-    borderStyle: "dashed",
+    borderRadius: radius.pill,
+  },
+  filter: {
+    minWidth: TAP,
+    minHeight: TAP,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: space.md,
+    gap: 2,
+    borderWidth: 1,
+    borderRadius: radius.pill,
   },
-  shortcut: { flexDirection: "row", alignItems: "center", gap: space.md },
-  tools: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
   stale: { gap: space.md, opacity: 0.45 },
 });

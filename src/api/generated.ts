@@ -1514,6 +1514,8 @@ export type SearchPitchesParams = {
   page?: number;
   /** Only this pitch type */
   type?: SearchPitchesType;
+  /** Game length in minutes. Only pitches with matching open options are returned */
+  duration?: typeof SearchPitchesDuration[keyof typeof SearchPitchesDuration];
   /**
    * Budget in kobo: only lengths that cost at most this
    * @minimum 0
@@ -1539,6 +1541,10 @@ export const SearchPitchesType = {
   '7-a-side': '7-a-side',
 } as const;
 
+export const SearchPitchesDuration = {  NUMBER_60: 60,
+  NUMBER_90: 90,
+  NUMBER_120: 120,
+} as const
 export type SearchPitchesTime = typeof SearchPitchesTime[keyof typeof SearchPitchesTime];
 
 

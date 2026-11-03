@@ -3175,6 +3175,34 @@
             }
           },
           {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "enum": [
+                    60
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    90
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    120
+                  ]
+                }
+              ],
+              "description": "Game length in minutes. Only pitches with matching open options are returned"
+            }
+          },
+          {
             "name": "maxPrice",
             "in": "query",
             "required": false,
