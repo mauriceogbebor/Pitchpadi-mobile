@@ -1,4 +1,5 @@
 import { Linking, Share } from "react-native";
+import { type Point, pinDirectionsUrl } from "./geo";
 
 /**
  * The website, which keeps the shared booking and pitch pages (ADR-003). Set
@@ -13,6 +14,8 @@ type Place = {
   address: string;
   landmark: string | null;
   areaName: string;
+  /** The owner's map pin, when set: directions go straight to it. */
+  location?: Point | null;
 };
 
 /** "27 Addo Road, Near Ajah market, Ajah" */
@@ -22,8 +25,12 @@ export function placeLine(pitch: Place): string {
     .join(", ");
 }
 
-/** Google Maps search for the venue: works without an API key or coordinates. */
+/**
+ * Google Maps directions to the venue's pin, or else a search for its name
+ * and address (works without an API key or coordinates).
+ */
 export function directionsUrl(pitch: Place): string {
+  if (pitch.location) return pinDirectionsUrl(pitch.location);
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${pitch.facilityName}, ${placeLine(pitch)}, Lagos`,
   )}`;
@@ -31,6 +38,19 @@ export function directionsUrl(pitch: Place): string {
 
 export function openDirections(pitch: Place) {
   void Linking.openURL(directionsUrl(pitch));
+}
+
+/** A venue's shareable page: all its pitches, opens in the app when installed. */
+export function venueLink(facilityId: string): string {
+  return `${WEB_URL}/venues/${facilityId}`;
+}
+
+export function venueShareText(venue: {
+  name: string;
+  areaName: string;
+  id: string;
+}): string {
+  return `Book a pitch at ${venue.name} (${venue.areaName}) on PitchPadi: ${venueLink(venue.id)}`;
 }
 
 /** The team link that opens the booking for teammates without the app. */

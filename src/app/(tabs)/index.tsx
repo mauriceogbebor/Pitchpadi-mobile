@@ -11,6 +11,13 @@ import {
   type PitchAvailability,
 } from "@/api/generated";
 import { Chip, TimeChip } from "@/components/chips";
+import {
+  activeFilters,
+  FilterSheet,
+  type Filters,
+  NO_FILTERS,
+  SORT_LABEL,
+} from "@/components/filter-sheet";
 import { DateBlock } from "@/components/date-block";
 import { DateStrip } from "@/components/date-strip";
 import { PitchBand } from "@/components/pitch-band";
@@ -29,13 +36,14 @@ import {
   dateParts,
   formatInstantTime,
   formatNaira,
-  inTimeOfDay,
   lagosToday,
   nextDates,
   TIMES_OF_DAY,
   type TimeOfDay,
 } from "@/lib/format";
+import { formatDistance, nearParam } from "@/lib/geo";
 import { useMyBookings } from "@/lib/my-bookings";
+import { useNearMe } from "@/lib/use-near-me";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -45,7 +53,11 @@ const TIME_OPTIONS = TIMES_OF_DAY.map((item) => ({
   label: item.value === "any" ? "Any time" : item.label,
 }));
 
-/** Play: open pitches across Lagos for a day, narrowed by area and time of day. */
+/**
+ * Play, the marketplace: open pitches across Lagos for a day, narrowed by
+ * area, time of day, size and budget, sorted by best match, price, kick-off
+ * or distance. The API does the filtering and sorting (MK-01).
+ */
 export default function PlayScreen() {
   const colors = useColors();
   const reduce = useReducedMotion();
@@ -54,6 +66,10 @@ export default function PlayScreen() {
   const [date, setDate] = useState(today);
   const [area, setArea] = useState<string | null>(null);
   const [time, setTime] = useState<TimeOfDay>("any");
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const { nearMe, turnOn, turnOff } = useNearMe();
+  const near = nearMe.status === "on" ? nearParam(nearMe.point) : undefined;
 
   const areas = useQuery({
     queryKey: ["areas"],
@@ -64,9 +80,19 @@ export default function PlayScreen() {
     staleTime: 60 * 60 * 1000,
   });
   const search = useQuery({
-    queryKey: ["search", date, area],
+    queryKey: ["search", date, area, time, filters, near],
     queryFn: async () => {
-      const response = await searchPitches({ date, area: area ?? undefined });
+      const response = await searchPitches({
+        date,
+        area: area ?? undefined,
+        time,
+        type: filters.type === "any" ? undefined : filters.type,
+        maxPrice: filters.maxPrice ?? undefined,
+        // Nearest needs a location; until there is one, keep the best match.
+        sort:
+          filters.sort === "nearest" && !near ? "recommended" : filters.sort,
+        near,
+      });
       if (response.status !== 200)
         throw new Error(
           (response.data as { error?: string }).error ??
@@ -74,21 +100,33 @@ export default function PlayScreen() {
         );
       return response.data;
     },
+    // Keep the last answer on screen while a new filter loads (slow networks).
+    placeholderData: (previous) => previous,
   });
 
-  const results = useMemo(() => {
-    const list = (search.data?.results ?? []).map((result) => ({
-      ...result,
-      startTimes: result.startTimes.filter((start) =>
-        inTimeOfDay(start.startsAt, time),
-      ),
-    }));
-    return list.sort(
-      (a, b) =>
-        Number(b.startTimes.length > 0) - Number(a.startTimes.length > 0),
-    );
-  }, [search.data, time]);
-  const open = results.filter((result) => result.startTimes.length > 0).length;
+  const results = search.data?.results ?? [];
+  const open = search.data?.openCount ?? 0;
+  const filterCount = activeFilters(filters);
+
+  async function toggleNearMe() {
+    if (nearMe.status === "on") {
+      turnOff();
+      if (filters.sort === "nearest")
+        setFilters({ ...filters, sort: "recommended" });
+      return;
+    }
+    const ok = await turnOn();
+    if (ok && filters.sort === "recommended")
+      setFilters({ ...filters, sort: "nearest" });
+  }
+
+  async function changeFilters(next: Filters) {
+    setFilters(next);
+    if (next.sort === "nearest" && nearMe.status !== "on") {
+      const ok = await turnOn();
+      if (!ok) setFilters({ ...next, sort: "recommended" });
+    }
+  }
   const areaName = areas.data?.find((item) => item.slug === area)?.name;
   const day = dateParts(date);
 
@@ -151,6 +189,34 @@ export default function PlayScreen() {
             value={time}
             onChange={setTime}
           />
+          <View style={styles.tools}>
+            <Chip
+              icon={nearMe.status === "on" ? "navigate" : "navigate-outline"}
+              label="Near me"
+              busy={nearMe.status === "finding"}
+              selected={nearMe.status === "on"}
+              onPress={() => void toggleNearMe()}
+              accessibilityLabel={
+                nearMe.status === "on"
+                  ? "Near me is on. Turn it off"
+                  : "Show distances from where you are"
+              }
+            />
+            <Chip
+              icon="options-outline"
+              label={filterCount ? `Filters (${filterCount})` : "Filters"}
+              selected={filterCount > 0}
+              onPress={() => setSheetOpen(true)}
+              accessibilityLabel={`Filters${filterCount ? `, ${filterCount} on` : ""}. Sort, pitch size and budget`}
+            />
+          </View>
+          {nearMe.status === "denied" || nearMe.status === "unavailable" ? (
+            <Body tone="muted" size={14} accessibilityLiveRegion="polite">
+              {nearMe.status === "denied"
+                ? "Location is off for PitchPadi. Turn it on in your phone's settings to see pitches near you."
+                : "We could not find your location. Try again outside or with location turned on."}
+            </Body>
+          ) : null}
         </View>
 
         {search.isPending ? (
@@ -171,7 +237,7 @@ export default function PlayScreen() {
           </Notice>
         ) : (
           <Animated.View
-            key={`${date}:${area}:${time}`}
+            key={`${date}:${area}:${time}:${JSON.stringify(filters)}:${near}`}
             entering={reduce ? undefined : FadeIn.duration(180)}
             style={{ gap: space.md }}
           >
@@ -184,12 +250,28 @@ export default function PlayScreen() {
                 ? "today"
                 : `on ${day.weekday} ${day.day} ${day.month}`}
               {areaName ? ` in ${areaName}` : " across Lagos"}
+              {filters.sort !== "recommended" &&
+              (filters.sort !== "nearest" || near)
+                ? `, ${SORT_LABEL[filters.sort].toLowerCase()} first`
+                : near
+                  ? ", nearest first"
+                  : ""}
             </Body>
             {results.length === 0 ? (
               <Notice
-                title={`No pitches listed${areaName ? ` in ${areaName}` : ""} yet`}
+                title={
+                  filterCount
+                    ? "No pitches match these filters"
+                    : `No pitches listed${areaName ? ` in ${areaName}` : ""} yet`
+                }
                 action={
-                  area ? (
+                  filterCount ? (
+                    <Button
+                      variant="outline"
+                      label="Clear filters"
+                      onPress={() => setFilters(NO_FILTERS)}
+                    />
+                  ) : area ? (
                     <Button
                       variant="outline"
                       label="Show all of Lagos"
@@ -198,7 +280,11 @@ export default function PlayScreen() {
                   ) : undefined
                 }
               >
-                <Body tone="muted">Try another day or area.</Body>
+                <Body tone="muted">
+                  {filterCount
+                    ? "Try a higher budget or any pitch size."
+                    : "Try another day or area."}
+                </Body>
               </Notice>
             ) : (
               <>
@@ -231,6 +317,12 @@ export default function PlayScreen() {
           </Animated.View>
         )}
       </ScrollView>
+      <FilterSheet
+        visible={sheetOpen}
+        filters={filters}
+        onChange={(next) => void changeFilters(next)}
+        onClose={() => setSheetOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -357,6 +449,11 @@ function PitchCard({
         <View style={styles.meta}>
           <Ionicons name="location-outline" size={16} color={colors.link} />
           <Body size={15} style={{ flex: 1 }} numberOfLines={2}>
+            {result.distanceKm !== null ? (
+              <Body size={15} weight="semibold" numeric>
+                {formatDistance(result.distanceKm)},{" "}
+              </Body>
+            ) : null}
             {pitch.areaName}, {pitch.address}
             {pitch.landmark ? `, ${pitch.landmark}` : ""}
           </Body>
@@ -430,4 +527,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
   },
   shortcut: { flexDirection: "row", alignItems: "center", gap: space.md },
+  tools: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
 });

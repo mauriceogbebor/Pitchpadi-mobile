@@ -180,15 +180,31 @@ export default function PitchScreen() {
                     {placeLine(info)}
                   </Body>
                 </View>
-                <Button
-                  variant="outline"
-                  icon="navigate-outline"
-                  label="Get directions"
-                  onPress={() => openDirections(info)}
-                  accessibilityHint="Opens Google Maps"
-                  textColor={colors.onBand}
-                  style={styles.onBandOutline}
-                />
+                <View style={styles.bandActions}>
+                  <Button
+                    variant="outline"
+                    icon="navigate-outline"
+                    label="Directions"
+                    onPress={() => openDirections(info)}
+                    accessibilityHint="Opens Google Maps"
+                    textColor={colors.onBand}
+                    style={[styles.onBandOutline, { flex: 1 }]}
+                  />
+                  <Button
+                    variant="outline"
+                    icon="business-outline"
+                    label="Venue"
+                    accessibilityLabel={`All pitches at ${info.facilityName}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/venues/[facilityId]",
+                        params: { facilityId: info.facilityId, date },
+                      })
+                    }
+                    textColor={colors.onBand}
+                    style={[styles.onBandOutline, { flex: 1 }]}
+                  />
+                </View>
               </PitchBand>
 
               {amenities.length > 0 && (
@@ -374,8 +390,8 @@ const styles = StyleSheet.create({
   onBandOutline: {
     backgroundColor: "transparent",
     borderColor: "rgba(255,255,255,0.35)",
-    marginTop: space.sm,
   },
+  bandActions: { flexDirection: "row", gap: space.sm, marginTop: space.sm },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   amenity: {
     flexDirection: "row",

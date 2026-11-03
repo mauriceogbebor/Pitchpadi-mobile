@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-03 — MK-01 Marketplace (0.7.0)
+
+- Play: **Near me** shows how far each pitch is and puts the nearest first. Your location is asked for only when you tap it and is rounded to about 1 km before it leaves the phone.
+- **Filters**: sort by best match, cheapest, soonest or nearest; 5-a-side or 7-a-side; a budget for one game. The list updates as you choose, keeps the last results on screen on a slow connection, and offers "Clear filters" when nothing matches.
+- **Venue pages**: every pitch at a venue with its open times, amenities, directions and "Share" on WhatsApp. Open one from a pitch ("Venue") or a shared `/venues/…` link.
+- **Map pin** for owners (Manage venue → Map pin): pin where you stand at the venue, or paste coordinates or a Google Maps link. Players then get distances and directions straight to your gate.
+- Directions go to the venue's pin when it has one.
+
 ## 2026-11-02 — D3 Redesign: "Under the lights" (0.6.0)
 
 - A new look across the app: deep pitch-green bands with mowing stripes and chalk lines where it matters (Play, the pitch page, the hold, the booking, sign-in), quiet chalk-and-white elsewhere, and scoreboard figures for times, prices and references.

@@ -153,6 +153,9 @@ export default function VenueScreen() {
             </View>
             <Press
               accessibilityRole="button"
+              accessibilityLabel={
+                venue.role === "owner" ? "Manage venue" : "Venue setup"
+              }
               onPress={() =>
                 router.push({
                   pathname: "/venue/manage",

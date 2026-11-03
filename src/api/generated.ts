@@ -493,6 +493,23 @@ export interface Facility {
   /** @nullable */
   landmark: string | null;
   amenities: Amenity[];
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+}
+
+export interface GeoPoint {
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
 }
 
 export type PitchType = typeof PitchType[keyof typeof PitchType];
@@ -682,6 +699,8 @@ export interface PublicPitchSummary {
   id: string;
   name: string;
   type: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  facilityId: string;
   facilityName: string;
   areaName: string;
   areaSlug: string;
@@ -689,6 +708,7 @@ export interface PublicPitchSummary {
   /** @nullable */
   landmark: string | null;
   amenities: Amenity[];
+  location: GeoPoint | null;
   timeZone: string;
   paymentMode: PublicPitchSummaryPaymentMode;
   /**
@@ -732,6 +752,21 @@ export interface StartTime {
 export interface PitchAvailability {
   pitch: PublicPitchSummary;
   startTimes: StartTime[];
+  /** @nullable */
+  distanceKm: number | null;
+}
+
+export interface PublicVenue {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  areaName: string;
+  areaSlug: string;
+  address: string;
+  /** @nullable */
+  landmark: string | null;
+  amenities: Amenity[];
+  location: GeoPoint | null;
 }
 
 export const CreateHoldInputDurationMinutes = {  NUMBER_60: 60,
@@ -1310,6 +1345,33 @@ export type UpdateFacility200 = {
   facilityId: string;
 };
 
+/**
+ * @nullable
+ */
+export type SetFacilityLocationBodyLocation = {
+  /**
+     * @minimum 6.2
+     * @maximum 6.9
+     */
+  latitude: number;
+  /**
+     * @minimum 2.6
+     * @maximum 4.5
+     */
+  longitude: number;
+} | null;
+
+export type SetFacilityLocationBody = {
+  /** @nullable */
+  location: SetFacilityLocationBodyLocation;
+};
+
+export type SetFacilityLocation200 = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  facilityId: string;
+  location: GeoPoint | null;
+};
+
 export type AddPitchBodyPitchType = typeof AddPitchBodyPitchType[keyof typeof AddPitchBodyPitchType];
 
 
@@ -1418,7 +1480,52 @@ export type SearchPitchesParams = {
    * @maximum 9007199254740991
    */
   page?: number;
+  /** Only this pitch type */
+  type?: SearchPitchesType;
+  /**
+   * Budget in kobo: only lengths that cost at most this
+   * @minimum 0
+   * @maximum 9007199254740991
+   */
+  maxPrice?: number;
+  /** Start times before noon, noon to 5 pm, or from 5 pm (Lagos time) */
+  time?: SearchPitchesTime;
+  /** Open pitches always come first. recommended uses distance when near is given; nearest needs near */
+  sort?: SearchPitchesSort;
+  /**
+   * lat,lng of the player, rounded by the client to about 1 km. Used only to work out distances; never stored or logged
+   * @pattern ^-?\d{1,2}(\.\d+)?,-?\d{1,3}(\.\d+)?$
+   */
+  near?: string;
 };
+
+export type SearchPitchesType = typeof SearchPitchesType[keyof typeof SearchPitchesType];
+
+
+export const SearchPitchesType = {
+  '5-a-side': '5-a-side',
+  '7-a-side': '7-a-side',
+} as const;
+
+export type SearchPitchesTime = typeof SearchPitchesTime[keyof typeof SearchPitchesTime];
+
+
+export const SearchPitchesTime = {
+  any: 'any',
+  morning: 'morning',
+  afternoon: 'afternoon',
+  evening: 'evening',
+} as const;
+
+export type SearchPitchesSort = typeof SearchPitchesSort[keyof typeof SearchPitchesSort];
+
+
+export const SearchPitchesSort = {
+  recommended: 'recommended',
+  cheapest: 'cheapest',
+  soonest: 'soonest',
+  nearest: 'nearest',
+} as const;
 
 export type SearchPitches200 = {
   date: string;
@@ -1430,7 +1537,28 @@ export type SearchPitches200 = {
      */
   page: number;
   hasMore: boolean;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  matched: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  openCount: number;
   results: PitchAvailability[];
+};
+
+export type GetPublicVenueParams = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  date?: string;
+};
+
+export type GetPublicVenue200 = {
+  date: string;
+  venue: PublicVenue;
+  pitches: PitchAvailability[];
 };
 
 export type GetPublicPitchParams = {
@@ -2930,6 +3058,82 @@ return appFetch<updateFacilityResponse>(getUpdateFacilityUrl(organizationId,faci
 
 
 
+export type setFacilityLocationResponse200 = {
+  data: SetFacilityLocation200
+  status: 200
+}
+
+export type setFacilityLocationResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type setFacilityLocationResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type setFacilityLocationResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type setFacilityLocationResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type setFacilityLocationResponseSuccess = (setFacilityLocationResponse200) & {
+  headers: Headers;
+};
+export type setFacilityLocationResponseError = (setFacilityLocationResponse400 | setFacilityLocationResponse401 | setFacilityLocationResponse403 | setFacilityLocationResponse404) & {
+  headers: Headers;
+};
+
+export type setFacilityLocationResponse = (setFacilityLocationResponseSuccess | setFacilityLocationResponseError)
+
+export const getSetFacilityLocationUrl = (organizationId: string,
+    facilityId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/facilities/${facilityId}/location`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Set or clear the venue's map pin (players see distance and exact directions). Must be inside Lagos
+ */
+export const setFacilityLocation = async (organizationId: string,
+    facilityId: string,
+    setFacilityLocationBody: SetFacilityLocationBody, options?: Parameters<typeof appFetch>[1]): Promise<setFacilityLocationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<setFacilityLocationResponse>(getSetFacilityLocationUrl(organizationId,facilityId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setFacilityLocationBody)
+  }
+);}
+
+
+
 export type addPitchResponse201 = {
   data: CreatedPitch
   status: 201
@@ -3501,6 +3705,64 @@ export const getSearchPitchesUrl = (params?: SearchPitchesParams,) => {
 export const searchPitches = async (params?: SearchPitchesParams, options?: Parameters<typeof appFetch>[1]): Promise<searchPitchesResponse> => {
 
   return appFetch<searchPitchesResponse>(getSearchPitchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getPublicVenueResponse200 = {
+  data: GetPublicVenue200
+  status: 200
+}
+
+export type getPublicVenueResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type getPublicVenueResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getPublicVenueResponseSuccess = (getPublicVenueResponse200) & {
+  headers: Headers;
+};
+export type getPublicVenueResponseError = (getPublicVenueResponse400 | getPublicVenueResponse404) & {
+  headers: Headers;
+};
+
+export type getPublicVenueResponse = (getPublicVenueResponseSuccess | getPublicVenueResponseError)
+
+export const getGetPublicVenueUrl = (facilityId: string,
+    params?: GetPublicVenueParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/public/venues/${facilityId}?${stringifiedParams}` : `/v1/public/venues/${facilityId}`
+}
+
+/**
+ * No sign-in required.
+ * @summary A venue's public page: its details and every published pitch with open start times on a date (default today)
+ */
+export const getPublicVenue = async (facilityId: string,
+    params?: GetPublicVenueParams, options?: Parameters<typeof appFetch>[1]): Promise<getPublicVenueResponse> => {
+
+  return appFetch<getPublicVenueResponse>(getGetPublicVenueUrl(facilityId,params),
   {
     ...options,
     method: 'GET'

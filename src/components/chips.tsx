@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -40,29 +41,42 @@ export function Chip({
   selected,
   onPress,
   accessibilityLabel,
+  icon,
+  busy = false,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
+  /** A leading icon, for chips that do something (Near me, Filters). */
+  icon?: keyof typeof Ionicons.glyphMap;
+  busy?: boolean;
 }) {
   const colors = useColors();
+  const fg = selected ? colors.onPrimary : colors.text;
   return (
     <Press
       accessibilityRole="button"
       accessibilityState={{ selected }}
       aria-selected={selected}
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={busy ? "Working" : undefined}
       onPress={onPress}
       hitSlop={2}
       style={[
         styles.chip,
+        icon ? styles.withIcon : null,
         {
           backgroundColor: selected ? colors.primary : colors.card,
           borderColor: selected ? colors.primary : colors.border,
         },
       ]}
     >
+      {busy ? (
+        <ActivityIndicator size="small" color={fg} />
+      ) : icon ? (
+        <Ionicons name={icon} size={17} color={fg} />
+      ) : null}
       <Body
         weight="semibold"
         size={15}
@@ -139,6 +153,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: space.lg,
     justifyContent: "center",
+  },
+  withIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: space.md,
   },
   time: {
     minHeight: TAP,

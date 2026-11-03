@@ -83,6 +83,10 @@ export default function RootLayout() {
           />
           <Stack.Screen name="pitch/[pitchId]" options={{ title: "Pitch" }} />
           <Stack.Screen
+            name="venues/[facilityId]"
+            options={{ title: "Venue" }}
+          />
+          <Stack.Screen
             name="checkout/[holdId]"
             options={{ title: "Checkout" }}
           />
@@ -104,6 +108,7 @@ export default function RootLayout() {
             name="venue/details"
             options={{ title: "Venue details" }}
           />
+          <Stack.Screen name="venue/pin" options={{ title: "Map pin" }} />
           <Stack.Screen
             name="venue/hours"
             options={{ title: "Hours and prices" }}

@@ -2179,6 +2179,148 @@
         ]
       }
     },
+    "/v1/owner/organizations/{organizationId}/facilities/{facilityId}/location": {
+      "put": {
+        "operationId": "setFacilityLocation",
+        "summary": "Set or clear the venue's map pin (players see distance and exact directions). Must be inside Lagos",
+        "description": "Requires the organization's owner.",
+        "tags": [
+          "Owner"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "facilityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": 6.2,
+                        "maximum": 6.9
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": 2.6,
+                        "maximum": 4.5
+                      }
+                    },
+                    "required": [
+                      "latitude",
+                      "longitude"
+                    ]
+                  }
+                },
+                "required": [
+                  "location"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "facilityId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "location": {
+                      "nullable": true,
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/GeoPoint"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "facilityId",
+                    "location"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/v1/owner/organizations/{organizationId}/facilities/{facilityId}/pitches": {
       "post": {
         "operationId": "addPitch",
@@ -3018,6 +3160,70 @@
               "minimum": 1,
               "maximum": 9007199254740991
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "5-a-side",
+                "7-a-side"
+              ],
+              "description": "Only this pitch type"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Budget in kobo: only lengths that cost at most this"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "morning",
+                "afternoon",
+                "evening"
+              ],
+              "description": "Start times before noon, noon to 5 pm, or from 5 pm (Lagos time)"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recommended",
+                "cheapest",
+                "soonest",
+                "nearest"
+              ],
+              "description": "Open pitches always come first. recommended uses distance when near is given; nearest needs near"
+            }
+          },
+          {
+            "name": "near",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?\\d{1,2}(\\.\\d+)?,-?\\d{1,3}(\\.\\d+)?$",
+              "description": "lat,lng of the player, rounded by the client to about 1 km. Used only to work out distances; never stored or logged"
+            }
           }
         ],
         "responses": {
@@ -3043,6 +3249,16 @@
                     "hasMore": {
                       "type": "boolean"
                     },
+                    "matched": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "openCount": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
                     "results": {
                       "type": "array",
                       "items": {
@@ -3055,6 +3271,8 @@
                     "area",
                     "page",
                     "hasMore",
+                    "matched",
+                    "openCount",
                     "results"
                   ],
                   "additionalProperties": false
@@ -3063,6 +3281,89 @@
             }
           },
           "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/venues/{facilityId}": {
+      "get": {
+        "operationId": "getPublicVenue",
+        "summary": "A venue's public page: its details and every published pitch with open start times on a date (default today)",
+        "description": "No sign-in required.",
+        "tags": [
+          "Public"
+        ],
+        "parameters": [
+          {
+            "name": "facilityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "venue": {
+                      "$ref": "#/components/schemas/PublicVenue"
+                    },
+                    "pitches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PitchAvailability"
+                      }
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "venue",
+                    "pitches"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Error",
             "content": {
               "application/json": {
@@ -5125,6 +5426,14 @@
             "items": {
               "$ref": "#/components/schemas/Amenity"
             }
+          },
+          "latitude": {
+            "nullable": true,
+            "type": "number"
+          },
+          "longitude": {
+            "nullable": true,
+            "type": "number"
           }
         },
         "required": [
@@ -5134,7 +5443,9 @@
           "area_id",
           "address",
           "landmark",
-          "amenities"
+          "amenities",
+          "latitude",
+          "longitude"
         ],
         "additionalProperties": false
       },
@@ -5150,6 +5461,26 @@
           "seating",
           "security"
         ]
+      },
+      "GeoPoint": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "additionalProperties": false
       },
       "Pitch": {
         "type": "object",
@@ -5509,11 +5840,16 @@
             "items": {
               "$ref": "#/components/schemas/StartTime"
             }
+          },
+          "distanceKm": {
+            "nullable": true,
+            "type": "number"
           }
         },
         "required": [
           "pitch",
-          "startTimes"
+          "startTimes",
+          "distanceKm"
         ],
         "additionalProperties": false
       },
@@ -5530,6 +5866,11 @@
           },
           "type": {
             "type": "string"
+          },
+          "facilityId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "facilityName": {
             "type": "string"
@@ -5552,6 +5893,14 @@
             "items": {
               "$ref": "#/components/schemas/Amenity"
             }
+          },
+          "location": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              }
+            ]
           },
           "timeZone": {
             "type": "string"
@@ -5597,12 +5946,14 @@
           "id",
           "name",
           "type",
+          "facilityId",
           "facilityName",
           "areaName",
           "areaSlug",
           "address",
           "landmark",
           "amenities",
+          "location",
           "timeZone",
           "paymentMode",
           "fromPriceMinor",
@@ -5669,6 +6020,57 @@
           "endsNextDay",
           "amountMinor",
           "amountDueMinor"
+        ],
+        "additionalProperties": false
+      },
+      "PublicVenue": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "areaName": {
+            "type": "string"
+          },
+          "areaSlug": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "landmark": {
+            "nullable": true,
+            "type": "string"
+          },
+          "amenities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Amenity"
+            }
+          },
+          "location": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "areaName",
+          "areaSlug",
+          "address",
+          "landmark",
+          "amenities",
+          "location"
         ],
         "additionalProperties": false
       },

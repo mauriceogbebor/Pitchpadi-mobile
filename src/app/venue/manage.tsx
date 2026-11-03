@@ -163,19 +163,40 @@ export default function ManageVenueScreen() {
                 {facility.landmark ? `, ${facility.landmark}` : ""}
               </Body>
               {owner && (
-                <Button
-                  variant="outline"
-                  label="Edit venue details"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/venue/details",
-                      params: {
-                        organizationId,
-                        facilityId: facility.facility_id,
-                      },
-                    })
-                  }
-                />
+                <View style={{ flexDirection: "row", gap: space.sm }}>
+                  <Button
+                    variant="outline"
+                    icon="create-outline"
+                    label="Details"
+                    accessibilityLabel={`Edit details for ${facility.facility_name}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/venue/details",
+                        params: {
+                          organizationId,
+                          facilityId: facility.facility_id,
+                        },
+                      })
+                    }
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="outline"
+                    icon="pin-outline"
+                    label="Map pin"
+                    accessibilityLabel={`Map pin for ${facility.facility_name}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/venue/pin",
+                        params: {
+                          organizationId,
+                          facilityId: facility.facility_id,
+                        },
+                      })
+                    }
+                    style={{ flex: 1 }}
+                  />
+                </View>
               )}
               {pitches.map((pitch) => (
                 <PitchRow
