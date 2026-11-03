@@ -35,7 +35,8 @@ export type BookedGame = {
 const STATUS_NOTE: Record<string, string> = {
   completed: "This game has been played.",
   no_show: "The venue marked this game as a no-show.",
-  cancelled: "This booking was cancelled.",
+  cancelled:
+    "This booking was cancelled. If you paid online, any refund follows the terms below.",
   refunded: "This booking was cancelled and refunded.",
 };
 

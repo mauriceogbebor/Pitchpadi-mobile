@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getPublicVenue, type PitchAvailability } from "@/api/generated";
 import { TimeChip } from "@/components/chips";
 import { DateStrip } from "@/components/date-strip";
+import { OfferPrice } from "@/components/offer-price";
 import { PitchBand } from "@/components/pitch-band";
 import {
   Body,
@@ -21,7 +22,7 @@ import {
 import { StaleBanner } from "@/components/stale-banner";
 import { venueAmenities } from "@/lib/amenities";
 import { dayLabel, resultsView } from "@/lib/stale-results";
-import { dateParts, formatNaira, lagosToday, nextDates } from "@/lib/format";
+import { dateParts, lagosToday, nextDates } from "@/lib/format";
 import {
   openDirections,
   placeLine,
@@ -279,16 +280,7 @@ function VenuePitch({
           <Heading level={3}>{pitch.name}</Heading>
           <Body tone="muted">{pitch.type}</Body>
         </View>
-        {pitch.fromPriceMinor !== null && (
-          <View style={{ alignItems: "flex-end" }}>
-            <Body tone="muted" size={13}>
-              from
-            </Body>
-            <Body weight="bold" size={19} numeric>
-              {formatNaira(pitch.fromPriceMinor)}
-            </Body>
-          </View>
-        )}
+        <OfferPrice startTimes={startTimes} />
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </Press>
       {startTimes.length ? (

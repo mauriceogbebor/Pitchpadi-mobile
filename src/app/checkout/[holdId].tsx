@@ -231,6 +231,8 @@ function LiveHold({
   onChanged: () => void;
 }) {
   const colors = useColors();
+  // A guest finds this checkout again only on this phone (R7).
+  const signedIn = useAuth().status === "signedIn";
   const day = dateParts(hold.localDate);
   const until = hold.expiresAt ? formatInstantTime(hold.expiresAt) : "";
   const [payAnotherWay, setPayAnotherWay] = useState(false);
@@ -313,7 +315,9 @@ function LiveHold({
           </View>
           <Body tone="muted">
             {awaiting.method === "bank_transfer"
-              ? "Bank transfers can take a few minutes to confirm. You can leave this screen: it stays under Not finished in My bookings until the payment lands."
+              ? signedIn
+                ? "Bank transfers can take a few minutes to confirm. You can leave this screen: it stays under Not finished in My bookings until the payment lands."
+                : "Bank transfers can take a few minutes to confirm. You can leave this screen: on this phone, it stays under My bookings until the payment lands."
               : "Already paid? Your booking shows here as soon as the payment is confirmed."}
           </Body>
           {openError ? (

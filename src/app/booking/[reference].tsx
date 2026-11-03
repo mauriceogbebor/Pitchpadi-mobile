@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { getPublicBooking } from "@/api/generated";
 import { BookedCard } from "@/components/booked-card";
+import { HelpCard } from "@/components/help-card";
 import { Body, Button, Notice, Screen, Skeleton } from "@/components/ui";
 
 /** One booking from My bookings (or a shared team link opened in the app). */
@@ -42,7 +43,16 @@ export default function BookingScreen() {
         </Notice>
       ) : (
         <>
-          <BookedCard booking={booking.data} shared={shared === "1"} />
+          <BookedCard
+            booking={booking.data}
+            shared={shared === "1"}
+            // The terms saved when the booking was made (R7), as at checkout.
+            policy={booking.data.cancellationPolicy}
+          />
+          <HelpCard
+            reference={booking.data.reference}
+            active={booking.data.status === "confirmed"}
+          />
           {booking.data.pitch.bookable ? (
             <Button
               variant="outline"

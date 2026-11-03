@@ -24,6 +24,7 @@ import {
   formatNaira,
   lagosToday,
 } from "@/lib/format";
+import { useDeviceCheckouts } from "@/lib/use-device-checkouts";
 import { useMyBookings } from "@/lib/my-bookings";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -43,19 +44,37 @@ export default function BookingsScreen() {
   // Scoped to the account: another person signing in on this phone never
   // sees these, even from the cache (AuthProvider also clears it).
   const bookings = useMyBookings();
+  // Checkouts started on this phone without an account (R7): the only way a
+  // guest can find an unfinished bank transfer again.
+  const device = useDeviceCheckouts();
 
   // Fresh on every visit: a payment may have landed while the player was away.
   const { refetch } = bookings;
+  const { refresh: refreshDevice } = device;
   useFocusEffect(
     useCallback(() => {
       if (signedIn) void refetch();
-    }, [signedIn, refetch]),
+      void refreshDevice();
+    }, [signedIn, refetch, refreshDevice]),
   );
 
   const data = bookings.data;
+  const accountHolds = new Set(data?.inProgress.map((hold) => hold.id) ?? []);
+  const accountGames = new Set(
+    [...(data?.upcoming ?? []), ...(data?.past ?? [])].map((b) => b.reference),
+  );
+  // Shown once: the account's own list wins when it has the same checkout.
+  const phoneResume = (device.data?.resume ?? []).filter(
+    (hold) => !accountHolds.has(hold.id),
+  );
+  const phoneBooked = (device.data?.booked ?? []).filter(
+    (hold) => hold.booking && !accountGames.has(hold.booking.reference),
+  );
+  const onPhone = phoneResume.length + phoneBooked.length > 0;
   const empty =
     !!data &&
-    data.inProgress.length + data.upcoming.length + data.past.length === 0;
+    data.inProgress.length + data.upcoming.length + data.past.length === 0 &&
+    !onPhone;
 
   return (
     <SafeAreaView
@@ -77,20 +96,29 @@ export default function BookingsScreen() {
         {auth.status === "loading" ? (
           <Skeleton height={84} count={3} />
         ) : !signedIn ? (
-          <PitchBand markings="centre" contentStyle={styles.bandContent}>
-            <Heading level={2} style={{ color: colors.onBand }}>
-              Your games, in one place
-            </Heading>
-            <Body tone="onBandMuted">
-              Sign in with your phone number to see your games, including ones
-              you booked on the website with the same number.
-            </Body>
-            <Button
-              variant="onBand"
-              label="Sign in"
-              onPress={() => router.push("/sign-in")}
-            />
-          </PitchBand>
+          <>
+            {onPhone ? (
+              <PhoneCheckouts
+                resume={phoneResume}
+                booked={phoneBooked}
+                signedIn={signedIn}
+              />
+            ) : null}
+            <PitchBand markings="centre" contentStyle={styles.bandContent}>
+              <Heading level={2} style={{ color: colors.onBand }}>
+                Your games, in one place
+              </Heading>
+              <Body tone="onBandMuted">
+                Sign in with your phone number to see your games, including ones
+                you booked on the website with the same number.
+              </Body>
+              <Button
+                variant="onBand"
+                label="Sign in"
+                onPress={() => router.push("/sign-in")}
+              />
+            </PitchBand>
+          </>
         ) : bookings.isPending ? (
           <Skeleton height={84} count={3} />
         ) : bookings.isError ? (
@@ -125,6 +153,13 @@ export default function BookingsScreen() {
           </PitchBand>
         ) : (
           <>
+            {onPhone ? (
+              <PhoneCheckouts
+                resume={phoneResume}
+                booked={phoneBooked}
+                signedIn={signedIn}
+              />
+            ) : null}
             {data!.inProgress.length > 0 && (
               <Section title="Not finished">
                 {data!.inProgress.map((hold) => (
@@ -222,6 +257,67 @@ function UnfinishedRow({ hold }: { hold: Hold }) {
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </Card>
     </Press>
+  );
+}
+
+/**
+ * Checkouts started on this phone without an account: continue paying, or
+ * open a booking whose payment landed while the player was away (R7).
+ */
+function PhoneCheckouts({
+  resume,
+  booked,
+  signedIn,
+}: {
+  resume: Hold[];
+  booked: Hold[];
+  signedIn: boolean;
+}) {
+  const colors = useColors();
+  return (
+    <Section title="On this phone">
+      {resume.map((hold) => (
+        <UnfinishedRow key={hold.id} hold={hold} />
+      ))}
+      {booked.map((hold) => (
+        <Press
+          key={hold.id}
+          accessibilityRole="button"
+          accessibilityLabel={`Booked: ${hold.pitch.facilityName}, ${dayLabel(hold.localDate)} at ${hold.localStart}. Open booking ${hold.booking!.reference}`}
+          onPress={() =>
+            router.push({
+              pathname: "/booking/[reference]",
+              params: { reference: hold.booking!.reference },
+            })
+          }
+        >
+          <Card style={styles.unfinished}>
+            <DateBlock date={hold.localDate} strong />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Body weight="semibold" tone="success" size={14}>
+                Booked: your payment landed
+              </Body>
+              <Body weight="semibold" numeric>
+                {hold.localStart}, {hold.pitch.facilityName}
+              </Body>
+              <Body tone="muted" size={14} numeric>
+                Reference {hold.booking!.reference}
+              </Body>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textMuted}
+            />
+          </Card>
+        </Press>
+      ))}
+      <Body tone="muted" size={14}>
+        {signedIn
+          ? "Started on this phone before you signed in."
+          : "Started without signing in. Sign in with the phone number you gave to keep your games in your account."}
+      </Body>
+    </Section>
   );
 }
 

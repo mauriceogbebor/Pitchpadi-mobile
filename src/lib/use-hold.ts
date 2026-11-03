@@ -1,7 +1,9 @@
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { createHold } from "@/api/generated";
+import { useAuth } from "@/auth/auth-context";
 import { newIdempotencyKey } from "@/lib/ids";
+import { rememberCheckout } from "@/lib/use-device-checkouts";
 
 type ErrorBody = { error?: string };
 
@@ -12,6 +14,7 @@ type ErrorBody = { error?: string };
  * The API decides whether the time is still free and what it costs.
  */
 export function useHoldSlot(onTaken?: () => void) {
+  const auth = useAuth();
   const keys = useRef(new Map<string, string>());
   const [holding, setHolding] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,10 @@ export function useHoldSlot(onTaken?: () => void) {
         { headers: { "idempotency-key": key } },
       );
       if (response.status === 200 || response.status === 201) {
+        // A guest's checkout is only findable again from this phone (R7);
+        // signed-in players get theirs back from their account.
+        if (auth.status !== "signedIn")
+          await rememberCheckout(response.data.hold.id);
         router.push({
           pathname: "/checkout/[holdId]",
           params: { holdId: response.data.hold.id },

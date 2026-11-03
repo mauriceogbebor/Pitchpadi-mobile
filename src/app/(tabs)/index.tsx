@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +20,7 @@ import {
 } from "@/components/filter-sheet";
 import { DateBlock } from "@/components/date-block";
 import { DateStrip } from "@/components/date-strip";
+import { OfferPrice } from "@/components/offer-price";
 import { PitchBand } from "@/components/pitch-band";
 import { PlayAgain } from "@/components/play-again";
 import { Segmented } from "@/components/segmented";
@@ -37,13 +38,13 @@ import {
   addDays,
   dateParts,
   formatInstantTime,
-  formatNaira,
   lagosToday,
   nextDates,
   TIMES_OF_DAY,
   type TimeOfDay,
 } from "@/lib/format";
 import { formatDistance, nearParam } from "@/lib/geo";
+import { useDeviceCheckouts } from "@/lib/use-device-checkouts";
 import { useMyBookings } from "@/lib/my-bookings";
 import {
   type PlaySelection,
@@ -51,6 +52,7 @@ import {
   playSelectionLabel,
   resultsView,
 } from "@/lib/stale-results";
+import { mergePages, shownLine } from "@/lib/search-pages";
 import { useNearMe } from "@/lib/use-near-me";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -101,9 +103,9 @@ export default function PlayScreen() {
     near: near ?? null,
   };
   const selectionKey = playSelectionKey(selection);
-  const search = useQuery({
+  const search = useInfiniteQuery({
     queryKey: ["search", selectionKey],
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       // Remember what this answer is for, so it is never shown as the answer
       // to a later choice (review of 3 November).
       const tag = {
@@ -118,6 +120,7 @@ export default function PlayScreen() {
         maxPrice: filters.maxPrice ?? undefined,
         sort,
         near,
+        page: pageParam,
       });
       if (response.status !== 200)
         throw new Error(
@@ -126,19 +129,26 @@ export default function PlayScreen() {
         );
       return { ...response.data, ...tag };
     },
+    initialPageParam: 1,
+    // 20 pitches per page; "Show more pitches" asks for the next (R7 review).
+    getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
     // Keep the last answer on screen while a new choice loads (slow networks),
     // but only labelled and with booking paused: see `view` below.
     placeholderData: (previous) => previous,
   });
 
+  const pages = search.data?.pages ?? [];
   const view = resultsView({
     wanted: selectionKey,
-    shown: search.data,
-    isError: search.isError,
+    shown: pages[0],
+    // A failed "Show more" keeps the pages already shown (handled below).
+    isError: search.isError && !search.isFetchNextPageError,
   });
   const stale = view.kind === "stale";
-  const results = search.data?.results ?? [];
-  const open = search.data?.openCount ?? 0;
+  const merged = mergePages(pages);
+  const results = merged.results;
+  const open = merged.openCount;
+  const partial = shownLine(results.length, merged.matched);
   const filterCount = activeFilters(filters);
 
   async function toggleNearMe() {
@@ -278,7 +288,7 @@ export default function PlayScreen() {
           </Notice>
         ) : (
           <Animated.View
-            key={search.data?.selectionKey}
+            key={pages[0]?.selectionKey}
             entering={reduce || stale ? undefined : FadeIn.duration(180)}
             style={{ gap: space.md }}
           >
@@ -376,6 +386,43 @@ export default function PlayScreen() {
                     date={date}
                   />
                 ))}
+                {partial ? (
+                  <View style={{ gap: space.sm }}>
+                    <Body
+                      tone="muted"
+                      size={14}
+                      style={{ textAlign: "center" }}
+                      accessibilityLiveRegion="polite"
+                    >
+                      {partial}
+                    </Body>
+                    {search.isFetchNextPageError ? (
+                      <Body
+                        tone="danger"
+                        size={14}
+                        style={{ textAlign: "center" }}
+                      >
+                        We could not load more pitches. Check your connection
+                        and try again.
+                      </Body>
+                    ) : null}
+                    {search.hasNextPage ? (
+                      <Button
+                        variant="outline"
+                        icon="chevron-down"
+                        label={
+                          search.isFetchNextPageError
+                            ? "Try again"
+                            : "Show more pitches"
+                        }
+                        accessibilityLabel={`Show more pitches. ${partial}`}
+                        busy={search.isFetchingNextPage}
+                        disabled={search.isFetchingNextPage}
+                        onPress={() => void search.fetchNextPage()}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
               </>
             )}
           </Animated.View>
@@ -395,7 +442,15 @@ export default function PlayScreen() {
 function NextGame() {
   const colors = useColors();
   const bookings = useMyBookings();
-  const unfinished = bookings.data?.inProgress[0];
+  // Guests' unfinished checkouts are remembered on this phone (R7).
+  const device = useDeviceCheckouts();
+  const { refresh: refreshDevice } = device;
+  useFocusEffect(
+    useCallback(() => {
+      void refreshDevice();
+    }, [refreshDevice]),
+  );
+  const unfinished = bookings.data?.inProgress[0] ?? device.data?.resume[0];
   const next = bookings.data?.upcoming[0];
   if (!unfinished && !next) return null;
   const today = lagosToday();
@@ -503,16 +558,7 @@ function PitchCard({
               {pitch.name}, {pitch.type}
             </Body>
           </View>
-          {pitch.fromPriceMinor !== null && (
-            <View style={{ alignItems: "flex-end" }}>
-              <Body tone="muted" size={13}>
-                from
-              </Body>
-              <Body weight="bold" size={19} numeric>
-                {formatNaira(pitch.fromPriceMinor)}
-              </Body>
-            </View>
-          )}
+          <OfferPrice startTimes={startTimes} />
         </View>
         <View style={styles.meta}>
           <Ionicons name="location-outline" size={16} color={colors.link} />

@@ -5057,6 +5057,22 @@
             "enum": [
               "NGN"
             ]
+          },
+          "cancellationPolicy": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "summary"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -5069,7 +5085,8 @@
           "durationMinutes",
           "startsAt",
           "amountMinor",
-          "currency"
+          "currency",
+          "cancellationPolicy"
         ],
         "additionalProperties": false
       },

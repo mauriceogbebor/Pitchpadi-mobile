@@ -202,6 +202,11 @@ export const PublicBookingCurrency = {
   NGN: 'NGN',
 } as const;
 
+export type PublicBookingCancellationPolicy = {
+  label: string;
+  summary: string;
+};
+
 export interface PublicBooking {
   reference: string;
   status: string;
@@ -221,6 +226,7 @@ export interface PublicBooking {
      */
   amountMinor: number;
   currency: PublicBookingCurrency;
+  cancellationPolicy: PublicBookingCancellationPolicy;
 }
 
 export interface Area {

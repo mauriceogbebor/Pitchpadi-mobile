@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-03 — R7 fixes (0.9.0)
+
+- **All results reachable:** Play shows "Showing 20 of 50 pitches" and a "Show more pitches" button that loads the next 20 for the same choice, until every match is shown. Results from an earlier choice stay labelled and locked as before.
+- **Guest payment recovery:** a checkout started without signing in is remembered on this phone (in secure storage). Leave during a bank transfer, and Play offers "Finish paying" and My bookings lists it under "On this phone"; continuing opens the same checkout, with no second hold. When the payment lands while you are away, it shows there as "Booked: your payment landed". The waiting message now says this accurately for guests.
+- **Honest prices on cards:** Play and venue cards show the cheapest price among the times shown, and its length ("from ₦25,000, 1 hour"), never a price that applies to none of them. Cards with nothing open show no price.
+- **After booking:** a reopened booking shows the cancellation terms saved when it was made, and a cancelled booking says how refunds work. A "Need help with this booking?" card with "Message support" (WhatsApp, booking reference only) appears once `EXPO_PUBLIC_SUPPORT_WHATSAPP` is set.
+
 ## 2026-11-03 — CI (R6)
 
 - GitHub Actions CI on every push and pull request: `npm ci`, generated-client check, lint, format, typecheck, tests and a web bundle build. `npm run api:check` now regenerates from the committed contract (`src/api/openapi.json`) instead of the sibling API repo, so it runs in CI; `npm run api:sync` still copies from the API first.
