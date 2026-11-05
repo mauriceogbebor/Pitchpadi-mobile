@@ -15,16 +15,20 @@ import {
 } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { useReducedMotion } from "react-native-reanimated";
 import { AuthProvider } from "@/auth/auth-context";
+import { LaunchVideo } from "@/components/launch-video";
 import { PushBridge } from "@/notifications/push-bridge";
 import { useColors, useIsDark } from "@/theme/use-theme";
 import { fonts } from "@/theme/tokens";
 
 SplashScreen.preventAutoHideAsync();
+const INTRO_SEEN_KEY = "pitchpadi.opening-video-seen";
 
 // Refresh what is on screen when the player comes back to the app, for example
 // after paying in another app or checking WhatsApp.
@@ -56,11 +60,39 @@ export default function RootLayout() {
   );
   const colors = useColors();
   const dark = useIsDark();
+  const reducedMotion = useReducedMotion();
+  const [introSeen, setIntroSeen] = useState<boolean | null>(
+    Platform.OS === "web" ? true : null,
+  );
+  const introReady =
+    Platform.OS === "web" || reducedMotion || introSeen !== null;
+  const showIntro =
+    Platform.OS !== "web" && !reducedMotion && introSeen === false;
 
   useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
-  if (!loaded && !error) return null;
+    if (Platform.OS === "web") return;
+    let active = true;
+    SecureStore.getItemAsync(INTRO_SEEN_KEY)
+      .then((seen) => {
+        if (active) setIntroSeen(seen === "yes");
+      })
+      .catch(() => {
+        if (active) setIntroSeen(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const finishIntro = useCallback(() => {
+    setIntroSeen(true);
+    void SecureStore.setItemAsync(INTRO_SEEN_KEY, "yes").catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if ((loaded || error) && introReady) SplashScreen.hideAsync();
+  }, [loaded, error, introReady]);
+  if ((!loaded && !error) || !introReady) return null;
 
   return (
     <QueryClientProvider client={client}>
@@ -123,6 +155,7 @@ export default function RootLayout() {
             options={{ title: "Booking" }}
           />
         </Stack>
+        {showIntro && <LaunchVideo onDone={finishIntro} />}
       </AuthProvider>
     </QueryClientProvider>
   );

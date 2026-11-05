@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — SV-01 Opening video
+
+- A brief, muted football clip from the project video plays after the native splash on the first app launch. It can be skipped, respects reduced motion and never delays entry for more than five seconds.
+- The static native splash now uses a PitchPadi pitch mark instead of the Expo placeholder.
+
 ## 2026-11-05
 
 - Guest hold retry keys are saved before the request and recovered after an app restart when the API created the hold but its response was lost.
