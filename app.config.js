@@ -1,25 +1,29 @@
-import type { ConfigContext, ExpoConfig } from "expo/config";
+// Plain JavaScript (not TypeScript) so that every Expo tool, including
+// eas-cli, can read it (DB-01).
+
+/** The PitchPadi project on Expo, set once `eas init` has linked it. */
+const EAS_PROJECT_ID = "";
 
 /**
  * Adds what depends on the environment to app.json:
- * - EAS_PROJECT_ID: the Expo project (under the mauricemcbig Expo account),
- *   needed for EAS builds and push tokens. Without it the app runs in Expo Go,
- *   with push switched off. The default below is filled in once `eas init`
- *   has created the project (DB-01).
+ * - EAS_PROJECT_ID: the Expo project (@mauricemcbig/pitchpadi), needed for
+ *   EAS builds and push tokens. Without it the app runs in Expo Go, with push
+ *   switched off. The default below is the project `eas init` created.
  * - EXPO_PUBLIC_WEB_URL: the website. When it is a real https address, shared
- *   team links (/b/…), pitch links (/pitches/…) and venue links (/venues/…) open in the app as verified
- *   Android App Links and iOS Universal Links. The website serves the matching
- *   assetlinks.json and apple-app-site-association files.
+ *   team links (/b/…), pitch links (/pitches/…) and venue links (/venues/…)
+ *   open in the app as verified Android App Links and iOS Universal Links. The
+ *   website serves the matching assetlinks.json and
+ *   apple-app-site-association files.
+ *
+ * @param {import("expo/config").ConfigContext} context
+ * @returns {import("expo/config").ExpoConfig}
  */
-/** Set after `npx eas-cli@latest init` creates the PitchPadi project. */
-const EAS_PROJECT_ID = "";
-
-export default ({ config }: ConfigContext): ExpoConfig => {
+module.exports = ({ config }) => {
   const webUrl = process.env.EXPO_PUBLIC_WEB_URL ?? "";
   const host = /^https:\/\//.test(webUrl) ? new URL(webUrl).host : null;
   const projectId = process.env.EAS_PROJECT_ID || EAS_PROJECT_ID;
   return {
-    ...(config as ExpoConfig),
+    ...config,
     plugins: [
       ...(config.plugins ?? []),
       ["expo-notifications", { color: "#0B3D2E" }],
