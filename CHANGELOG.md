@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — Development builds (DB-01)
+
+- The app can now be built and installed on a phone as itself, with the PitchPadi icon and splash, through EAS under the same Expo account and Apple team as Repitair. See "Install the real app on your phone" in the README. Adds `expo-dev-client` and `eas.json`.
+
 ## 2026-11-05 — Wordmark logo (0.13.0, SV-05)
 
 - The logo is now the name: "PitchPadi" with a volt ball for each i's dot, on the welcome screen. The app icon, splash and sign-in use the new centre-spot P, a P drawn by the halfway line and centre circle with the ball on the spot. It replaces the floodlight P from 0.12.0.

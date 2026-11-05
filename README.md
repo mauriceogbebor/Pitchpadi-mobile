@@ -55,6 +55,23 @@ If the phone cannot reach the API:
 - check that the Mac's firewall allows incoming connections for Node;
 - try `npx expo start --tunnel` (the API address must still be reachable from the phone).
 
+## Install the real app on your phone (development build)
+
+Expo Go shows its own icon and splash and cannot receive push notifications. A **development build** is PitchPadi's own app, with its icon and splash, that still loads the latest code from your Mac. Builds run on Expo's servers (EAS) under the `mauricemcbig` Expo account and the Apple team `36NYPSWU4R`, the same accounts as Repitair.
+
+One-time setup, in `pitchpadi-mobile` on your Mac:
+
+1. `npx eas-cli@latest login` (the `mauricemcbig` Expo account).
+2. `npx eas-cli@latest init` creates the PitchPadi project and prints its ID. Put that ID in `EAS_PROJECT_ID` at the top of `app.config.ts`.
+3. iPhone only: `npx eas-cli@latest device:create`, then open the link on the iPhone to register it. Turn on Settings, Privacy & Security, Developer Mode when iOS asks.
+
+Build and install:
+
+- Android: `npx eas-cli@latest build --profile development --platform android`. Open the link it prints on the phone and install the APK.
+- iPhone: `npx eas-cli@latest build --profile development --platform ios`. EAS signs it with the Apple team; open the link on the iPhone to install.
+
+Then run it like Expo Go: start the API, run `EXPO_PUBLIC_API_URL=http://<your Mac's address>:4000 npx expo start`, and open the PitchPadi app on the phone instead of Expo Go. Build again only after adding a native library or changing the icon, splash or app settings; code changes load straight from your Mac.
+
 ## Commands
 
 | Command                  | What it does                                                                   |
@@ -123,4 +140,4 @@ tests/                 unit tests
 
 ## Builds and releases
 
-Store builds use EAS (`npx eas-cli@latest build`) and need PitchPadi's Apple and Google developer accounts (M5). Over-the-air updates (`eas update`) can ship JavaScript-only fixes without a store review.
+Development builds are described above (`eas.json`, profile `development`). Store builds also use EAS and need a store listing for PitchPadi on App Store Connect and Google Play (M5). Over-the-air updates (`eas update`) can ship JavaScript-only fixes without a store review.

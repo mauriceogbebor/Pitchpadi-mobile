@@ -10,7 +10,8 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.pitchpadi.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "appleTeamId": "36NYPSWU4R"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,6 +43,7 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "mauricemcbig"
   }
 }
