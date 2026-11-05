@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { getHold, type Hold } from "@/api/generated";
+import { getHold, getHoldByKey, type Hold } from "@/api/generated";
 import { readSavedText, writeSavedText } from "@/lib/checkout-store";
 import {
   addCheckout,
@@ -8,13 +8,14 @@ import {
   parseSaved,
   pruneCheckouts,
 } from "@/lib/device-checkouts";
+import { clearPending, pendingHolds } from "@/lib/pending-hold-store";
 
 const KEY = ["deviceCheckouts"] as const;
 
 /** Saves a checkout started on this phone, so it can be found again (R7). */
 export async function rememberCheckout(holdId: string) {
   const list = parseSaved(await readSavedText());
-  await writeSavedText(JSON.stringify(addCheckout(list, holdId, new Date())));
+  return writeSavedText(JSON.stringify(addCheckout(list, holdId, new Date())));
 }
 
 /**
@@ -28,6 +29,25 @@ export function useDeviceCheckouts() {
     queryKey: KEY,
     queryFn: async () => {
       const now = new Date();
+      // A request may have reached the API just before the app was closed.
+      // Look up its saved key without creating a new hold.
+      try {
+        for (const pending of await pendingHolds()) {
+          try {
+            const response = await getHoldByKey({
+              headers: { "idempotency-key": pending.key },
+            });
+            if (response.status === 200) {
+              if (await rememberCheckout(response.data.hold.id))
+                await clearPending(pending.key);
+            }
+          } catch {
+            // Keep the key for the next visit if the phone is offline.
+          }
+        }
+      } catch {
+        // Secure storage may be unavailable; saved checkouts still load.
+      }
       const saved = pruneCheckouts(parseSaved(await readSavedText()), now);
       const checked = await Promise.all(
         saved.map(async (item) => {

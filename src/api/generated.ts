@@ -1661,6 +1661,10 @@ export type ReleaseHold200 = {
   hold: Hold;
 };
 
+export type GetHoldByKey200 = {
+  hold: Hold;
+};
+
 export type StartCheckout200 = {
   checkout: Checkout;
   hold: Hold;
@@ -4136,6 +4140,50 @@ export const releaseHold = async (holdId: string, options?: Parameters<typeof ap
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getHoldByKeyResponse200 = {
+  data: GetHoldByKey200
+  status: 200
+}
+
+export type getHoldByKeyResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getHoldByKeyResponseSuccess = (getHoldByKeyResponse200) & {
+  headers: Headers;
+};
+export type getHoldByKeyResponseError = (getHoldByKeyResponse404) & {
+  headers: Headers;
+};
+
+export type getHoldByKeyResponse = (getHoldByKeyResponseSuccess | getHoldByKeyResponseError)
+
+export const getGetHoldByKeyUrl = () => {
+
+
+
+
+  return `/v1/public/holds/by-key`
+}
+
+/**
+ * No sign-in required.
+ * @summary Recover an existing hold after a lost create response using its private Idempotency-Key
+ */
+export const getHoldByKey = async ( options?: Parameters<typeof appFetch>[1]): Promise<getHoldByKeyResponse> => {
+
+  return appFetch<getHoldByKeyResponse>(getGetHoldByKeyUrl(),
+  {
+    ...options,
+    method: 'GET'
 
 
   }

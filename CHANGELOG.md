@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05
+
+- Guest hold retry keys are saved before the request and recovered after an app restart when the API created the hold but its response was lost.
+
 ## 2026-11-03 — Compact discovery (0.10.0, CD-01)
 
 - Play groups loaded pitches by venue, with a pitch selector, a short area/distance line and exact available prices. Pagination still reaches every pitch.
