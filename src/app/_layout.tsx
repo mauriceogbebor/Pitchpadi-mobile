@@ -15,7 +15,6 @@ import {
 } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -23,14 +22,15 @@ import * as Linking from "expo-linking";
 import { AppState, Platform, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import { AuthProvider } from "@/auth/auth-context";
-import { LaunchVideo } from "@/components/launch-video";
+import { Welcome } from "@/components/welcome";
 import { openedFromLink } from "@/lib/app-path";
+import { startPlay, type WelcomeChoice, welcomeMode } from "@/lib/welcome";
+import { markWelcomeSeen, welcomeSeen } from "@/lib/welcome-store";
 import { PushBridge } from "@/notifications/push-bridge";
 import { useColors, useIsDark } from "@/theme/use-theme";
 import { fonts } from "@/theme/tokens";
 
 SplashScreen.preventAutoHideAsync();
-const INTRO_SEEN_KEY = "pitchpadi.opening-video-seen";
 
 // Refresh what is on screen when the player comes back to the app, for example
 // after paying in another app or checking WhatsApp.
@@ -63,38 +63,39 @@ export default function RootLayout() {
   const colors = useColors();
   const dark = useIsDark();
   const reducedMotion = useReducedMotion();
-  const [introSeen, setIntroSeen] = useState<boolean | null>(
-    Platform.OS === "web" ? true : null,
-  );
-  const introReady =
-    Platform.OS === "web" || reducedMotion || introSeen !== null;
-  const showIntro =
-    Platform.OS !== "web" && !reducedMotion && introSeen === false;
+  // The first-launch welcome (SV-02). Null until we know whether this phone
+  // has seen it and whether the app was opened from a shared link.
+  const [entry, setEntry] = useState<{
+    seen: boolean;
+    openedFromLink: boolean;
+  } | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     let active = true;
-    // Opened from a shared link: go straight to it. The video waits for an
+    // Opened from a shared link: go straight to it. The welcome waits for an
     // ordinary launch, so it is not marked as seen (R9 finding 3).
-    Promise.all([
-      SecureStore.getItemAsync(INTRO_SEEN_KEY),
-      Linking.getInitialURL().catch(() => null),
-    ])
+    Promise.all([welcomeSeen(), Linking.getInitialURL().catch(() => null)])
       .then(([seen, url]) => {
-        if (active) setIntroSeen(seen === "yes" || openedFromLink(url));
+        if (active) setEntry({ seen, openedFromLink: openedFromLink(url) });
       })
       .catch(() => {
-        if (active) setIntroSeen(false);
+        if (active) setEntry({ seen: true, openedFromLink: false });
       });
     return () => {
       active = false;
     };
   }, []);
 
-  const finishIntro = useCallback(() => {
-    setIntroSeen(true);
-    void SecureStore.setItemAsync(INTRO_SEEN_KEY, "yes").catch(() => undefined);
+  const finishWelcome = useCallback((choice: WelcomeChoice) => {
+    setDismissed(true);
+    void markWelcomeSeen();
+    startPlay(choice);
   }, []);
+  const introReady = entry !== null;
+  const mode =
+    entry && !dismissed ? welcomeMode({ ...entry, reducedMotion }) : "hidden";
+  const showIntro = mode !== "hidden";
 
   useEffect(() => {
     if ((loaded || error) && introReady) SplashScreen.hideAsync();
@@ -105,8 +106,8 @@ export default function RootLayout() {
     <QueryClientProvider client={client}>
       <AuthProvider>
         <PushBridge />
-        <StatusBar style={dark ? "light" : "dark"} />
-        {/* While the opening video plays, screen readers stay on it (R9). */}
+        <StatusBar style={dark || showIntro ? "light" : "dark"} />
+        {/* While the welcome shows, screen readers stay on it (R9). */}
         <View
           style={{ flex: 1 }}
           accessibilityElementsHidden={showIntro}
@@ -173,7 +174,9 @@ export default function RootLayout() {
             />
           </Stack>
         </View>
-        {showIntro && <LaunchVideo onDone={finishIntro} />}
+        {showIntro && (
+          <Welcome motion={mode === "video"} onDone={finishWelcome} />
+        )}
       </AuthProvider>
     </QueryClientProvider>
   );

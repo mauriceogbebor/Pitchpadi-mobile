@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -51,6 +51,7 @@ import {
 } from "@/lib/stale-results";
 import { mergePages, openLine, shownLine } from "@/lib/search-pages";
 import { useNearMe } from "@/lib/use-near-me";
+import { onStartPlay } from "@/lib/welcome";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -78,6 +79,19 @@ export default function PlayScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { nearMe, turnOn, turnOff } = useNearMe();
   const near = nearMe.status === "on" ? nearParam(nearMe.point) : undefined;
+
+  // A choice made on the first-launch welcome (SV-02): an area, or Near me.
+  useEffect(
+    () =>
+      onStartPlay((choice) => {
+        if (choice.kind === "area") setArea(choice.slug);
+        if (choice.kind === "nearMe")
+          void turnOn().then((ok) => {
+            if (ok) setFilters((current) => ({ ...current, sort: "nearest" }));
+          });
+      }),
+    [turnOn],
+  );
 
   const areas = useQuery({
     queryKey: ["areas"],

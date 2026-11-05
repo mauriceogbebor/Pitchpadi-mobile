@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — Welcome screen (0.11.0, SV-02)
+
+- The first launch now opens on a welcome screen with floodlit football looping behind it. Choose your area, use your location, or browse all of Lagos, and Play opens on that choice. It shows once, never over a shared link, and as a still picture with reduced motion. It replaces the 3.5-second opening video.
+
 ## 2026-11-05 — R9 fixes (0.10.1)
 
 - Play shows whole venues, 10 at a time, from the API: every matching pitch is on its venue's card from the start, and the count reads "50 pitches open at 36 venues". "Show more venues" loads the next 10.
