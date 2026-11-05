@@ -2,7 +2,7 @@
 // eas-cli, can read it (DB-01).
 
 /** The PitchPadi project on Expo, set once `eas init` has linked it. */
-const EAS_PROJECT_ID = "";
+const EAS_PROJECT_ID = "90a95703-36f4-4610-ad18-9b6a2c574992";
 
 /**
  * Adds what depends on the environment to app.json:

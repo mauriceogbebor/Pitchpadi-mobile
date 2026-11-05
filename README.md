@@ -62,7 +62,7 @@ Expo Go shows its own icon and splash and cannot receive push notifications. A *
 One-time setup, in `pitchpadi-mobile` on your Mac:
 
 1. `npx eas-cli@latest login` (the `mauricemcbig` Expo account).
-2. `npx eas-cli@latest init` creates the PitchPadi project and prints its ID. Put that ID in `EAS_PROJECT_ID` at the top of `app.config.js`.
+2. The PitchPadi project (`@mauricemcbig/pitchpadi`) already exists and its ID is in `app.config.js`, so `eas init` is not needed again.
 3. iPhone only: `npx eas-cli@latest device:create`, then open the link on the iPhone to register it. Turn on Settings, Privacy & Security, Developer Mode when iOS asks.
 
 Build and install:
