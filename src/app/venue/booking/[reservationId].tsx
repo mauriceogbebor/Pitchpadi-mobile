@@ -82,7 +82,7 @@ export default function VenueBookingScreen() {
           entry={entry}
           organizationId={organizationId}
           date={date}
-          place={pitch ? `${pitch.facilityName} · ${pitch.name}` : ""}
+          place={pitch ? `${pitch.facilityName}, ${pitch.name}` : ""}
         />
       )}
     </Screen>
@@ -187,7 +187,7 @@ function Details({
           <Heading level={2}> to {entry.localEnd}</Heading>
         </Heading>
         <Body tone="muted">
-          {dateParts(date).long} · {formatDuration(entry.durationMinutes)}
+          {dateParts(date).long}, {formatDuration(entry.durationMinutes)}
         </Body>
         {place ? <Body tone="muted">{place}</Body> : null}
       </View>

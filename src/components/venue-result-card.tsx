@@ -11,7 +11,7 @@ import { formatDuration } from "@/lib/format";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
-/** One venue, ranked where its first pitch appeared; every loaded pitch remains reachable. */
+/** One venue in the search order, with every matching pitch the API sent for it (R9). */
 export function VenueResultCard({
   results,
   date,
@@ -62,8 +62,8 @@ export function VenueResultCard({
         <Ionicons name="location-outline" size={16} color={colors.link} />
         <Body tone="muted" size={14} style={{ flex: 1 }}>
           {pitch.areaName}
-          {distanceKm !== null ? ` · ${formatDistance(distanceKm)}` : ""}
-          {pitch.amenities.includes("floodlights") ? " · Floodlit" : ""}
+          {distanceKm !== null ? `, ${formatDistance(distanceKm)}` : ""}
+          {pitch.amenities.includes("floodlights") ? ", Floodlit" : ""}
         </Body>
       </View>
       {results.length > 1 && (
@@ -109,7 +109,7 @@ export function VenueResultCard({
         <View style={{ flex: 1, gap: 2 }}>
           {results.length === 1 && <Body weight="semibold">{pitch.name}</Body>}
           <Body tone="muted" size={14}>
-            {results.length === 1 ? `${pitch.type} · ` : ""}
+            {results.length === 1 ? `${pitch.type}, ` : ""}
             {formatDuration(duration)} game
           </Body>
         </View>

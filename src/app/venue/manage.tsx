@@ -357,7 +357,7 @@ function PitchRow({
     >
       <View style={{ flex: 1, gap: 4 }}>
         <Body weight="semibold" size={17}>
-          {pitch.pitch_name} · {pitch.pitch_type}
+          {pitch.pitch_name}, {pitch.pitch_type}
         </Body>
         <StatusPill
           tone={live ? "paid" : pitch.has_schedule ? "pending" : "collect"}

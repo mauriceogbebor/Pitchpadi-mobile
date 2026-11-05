@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05 — R9 fixes (0.10.1)
+
+- Play shows whole venues, 10 at a time, from the API: every matching pitch is on its venue's card from the start, and the count reads "50 pitches open at 36 venues". "Show more venues" loads the next 10.
+- Signed-in players can hold a time even when the phone cannot save the retry key; guests are still stopped so they never lose a checkout.
+- A retry that finds an earlier, expired hold now says "Your earlier hold ran out. Tap again to hold this time."
+- The opening video keeps screen readers on itself while it plays, and is skipped when the app is opened from a shared link.
+- Separators use commas ("Ajah, Floodlit") instead of middle dots.
+
 ## 2026-11-05 — SV-01 Opening video
 
 - A brief, muted football clip from the project video plays after the native splash on the first app launch. It can be skipped, respects reduced motion and never delays entry for more than five seconds.

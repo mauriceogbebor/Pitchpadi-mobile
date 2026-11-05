@@ -45,7 +45,7 @@ export function PlayAgain({ compact = false }: { compact?: boolean }) {
           <View style={{ flex: 1 }}>
             <Body weight="semibold">Play again</Body>
             <Body tone="muted" size={14} numberOfLines={1}>
-              {game.pitch.facilityName} · {weekday} {game.localStart}
+              {game.pitch.facilityName}, {weekday} {game.localStart}
             </Body>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

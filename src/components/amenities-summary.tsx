@@ -36,8 +36,8 @@ export function AmenitiesSummary({ amenities }: { amenities: string[] }) {
               {items
                 .slice(0, 2)
                 .map((item) => item.label)
-                .join(" · ")}
-              {items.length > 2 ? ` · +${items.length - 2} more` : ""}
+                .join(", ")}
+              {items.length > 2 ? `, +${items.length - 2} more` : ""}
             </Body>
           )}
         </View>

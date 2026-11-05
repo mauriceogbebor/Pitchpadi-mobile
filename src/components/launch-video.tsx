@@ -25,7 +25,11 @@ export function LaunchVideo({ onDone }: { onDone: () => void }) {
   }, [onDone]);
 
   return (
-    <View style={styles.screen} accessibilityLabel="Football under the lights">
+    <View
+      style={styles.screen}
+      accessibilityViewIsModal
+      accessibilityLabel="Football under the lights"
+    >
       <VideoView
         player={player}
         style={StyleSheet.absoluteFill}

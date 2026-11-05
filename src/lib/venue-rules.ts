@@ -44,10 +44,10 @@ export function entryStatus(entry: CalendarEntry): {
   tone: EntryTone;
 } {
   if (entry.kind === "hold")
-    return { label: "Not a booking yet · being paid online", tone: "pending" };
+    return { label: "Not a booking yet, being paid online", tone: "pending" };
   if (entry.kind === "cancelled") return { label: "Cancelled", tone: "off" };
   if (entry.paymentState === "unpaid")
-    return { label: "Not paid · collect at the pitch", tone: "collect" };
+    return { label: "Not paid, collect at the pitch", tone: "collect" };
   return {
     label: entry.paymentMethod
       ? `Paid by ${METHOD_NAME[entry.paymentMethod] ?? entry.paymentMethod}`

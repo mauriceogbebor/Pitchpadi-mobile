@@ -230,7 +230,7 @@ export default function AddBookingScreen() {
           <Notice tone="success" title="Booking saved">
             <Body>{saved.label}</Body>
             <Body weight="semibold">
-              {name.trim()} · {saved.reference}
+              {name.trim()}, {saved.reference}
             </Body>
             <Body tone="muted">
               The time is blocked for players straight away.
@@ -284,7 +284,7 @@ export default function AddBookingScreen() {
                   {pitches.map((item) => (
                     <Chip
                       key={item.id}
-                      label={`${item.name} · ${item.type}`}
+                      label={`${item.name}, ${item.type}`}
                       selected={item.id === pitch?.id}
                       onPress={() => setPitchId(item.id)}
                     />

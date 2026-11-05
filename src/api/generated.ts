@@ -776,6 +776,13 @@ export interface PublicVenue {
   location: GeoPoint | null;
 }
 
+export interface VenueResult {
+  venue: PublicVenue;
+  /** @nullable */
+  distanceKm: number | null;
+  pitches: PitchAvailability[];
+}
+
 /**
  * @nullable
  */
@@ -1586,6 +1593,102 @@ export type SearchPitches200 = {
      */
   openCount: number;
   results: PitchAvailability[];
+};
+
+export type SearchVenuesParams = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  date?: string;
+  area?: string;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
+  /** Only this pitch type */
+  type?: SearchVenuesType;
+  /** Game length in minutes. Only pitches with matching open options are returned */
+  duration?: typeof SearchVenuesDuration[keyof typeof SearchVenuesDuration];
+  /**
+   * Budget in kobo: only lengths that cost at most this
+   * @minimum 0
+   * @maximum 9007199254740991
+   */
+  maxPrice?: number;
+  /** Start times before noon, noon to 5 pm, or from 5 pm (Lagos time) */
+  time?: SearchVenuesTime;
+  /** Open pitches always come first. recommended uses distance when near is given; nearest needs near */
+  sort?: SearchVenuesSort;
+  /**
+   * lat,lng of the player, rounded by the client to about 1 km. Used only to work out distances; never stored or logged
+   * @pattern ^-?\d{1,2}(\.\d+)?,-?\d{1,3}(\.\d+)?$
+   */
+  near?: string;
+};
+
+export type SearchVenuesType = typeof SearchVenuesType[keyof typeof SearchVenuesType];
+
+
+export const SearchVenuesType = {
+  '5-a-side': '5-a-side',
+  '7-a-side': '7-a-side',
+} as const;
+
+export const SearchVenuesDuration = {  NUMBER_60: 60,
+  NUMBER_90: 90,
+  NUMBER_120: 120,
+} as const
+export type SearchVenuesTime = typeof SearchVenuesTime[keyof typeof SearchVenuesTime];
+
+
+export const SearchVenuesTime = {
+  any: 'any',
+  morning: 'morning',
+  afternoon: 'afternoon',
+  evening: 'evening',
+} as const;
+
+export type SearchVenuesSort = typeof SearchVenuesSort[keyof typeof SearchVenuesSort];
+
+
+export const SearchVenuesSort = {
+  recommended: 'recommended',
+  cheapest: 'cheapest',
+  soonest: 'soonest',
+  nearest: 'nearest',
+} as const;
+
+export type SearchVenues200 = {
+  date: string;
+  /** @nullable */
+  area: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     * @nullable
+     */
+  durationMinutes: number | null;
+  hasMore: boolean;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  matchedVenues: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  openVenues: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  openPitches: number;
+  venues: VenueResult[];
 };
 
 export type GetPublicVenueParams = {
@@ -3782,6 +3885,57 @@ export const getSearchPitchesUrl = (params?: SearchPitchesParams,) => {
 export const searchPitches = async (params?: SearchPitchesParams, options?: Parameters<typeof appFetch>[1]): Promise<searchPitchesResponse> => {
 
   return appFetch<searchPitchesResponse>(getSearchPitchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type searchVenuesResponse200 = {
+  data: SearchVenues200
+  status: 200
+}
+
+export type searchVenuesResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type searchVenuesResponseSuccess = (searchVenuesResponse200) & {
+  headers: Headers;
+};
+export type searchVenuesResponseError = (searchVenuesResponse400) & {
+  headers: Headers;
+};
+
+export type searchVenuesResponse = (searchVenuesResponseSuccess | searchVenuesResponseError)
+
+export const getSearchVenuesUrl = (params?: SearchVenuesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/public/search/venues?${stringifiedParams}` : `/v1/public/search/venues`
+}
+
+/**
+ * No sign-in required.
+ * @summary The same search as searchPitches, by venue: each venue once with all its matching pitches; 10 venues per page, venues with something open first
+ */
+export const searchVenues = async (params?: SearchVenuesParams, options?: Parameters<typeof appFetch>[1]): Promise<searchVenuesResponse> => {
+
+  return appFetch<searchVenuesResponse>(getSearchVenuesUrl(params),
   {
     ...options,
     method: 'GET'

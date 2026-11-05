@@ -265,7 +265,7 @@ function Editor({
         <View style={{ gap: space.xs }}>
           <Heading>Hours and prices</Heading>
           <Body tone="muted">
-            {pitch.facility_name} · {pitch.name}. All times are Lagos time.
+            {pitch.facility_name}, {pitch.name}. All times are Lagos time.
           </Body>
         </View>
 

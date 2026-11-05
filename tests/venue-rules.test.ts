@@ -36,7 +36,7 @@ test("an unpaid venue booking can be marked paid or cancelled until it ends", ()
     cancel: true,
   });
   assert.deepEqual(entryStatus(entry({})), {
-    label: "Not paid · collect at the pitch",
+    label: "Not paid, collect at the pitch",
     tone: "collect",
   });
   const over = entry({ endsAt: "2026-11-03T17:59:00Z" });

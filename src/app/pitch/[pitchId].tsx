@@ -198,7 +198,7 @@ export default function PitchScreen() {
                 />
                 <Body tone="muted">
                   Kick-off on {day.long}
-                  {duration !== null ? ` · ${formatDuration(duration)}` : ""}
+                  {duration !== null ? `, ${formatDuration(duration)}` : ""}
                 </Body>
                 {matchingTimes.length === 0 ? (
                   <Notice

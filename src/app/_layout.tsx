@@ -19,10 +19,12 @@ import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { AppState, Platform } from "react-native";
+import * as Linking from "expo-linking";
+import { AppState, Platform, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import { AuthProvider } from "@/auth/auth-context";
 import { LaunchVideo } from "@/components/launch-video";
+import { openedFromLink } from "@/lib/app-path";
 import { PushBridge } from "@/notifications/push-bridge";
 import { useColors, useIsDark } from "@/theme/use-theme";
 import { fonts } from "@/theme/tokens";
@@ -72,9 +74,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "web") return;
     let active = true;
-    SecureStore.getItemAsync(INTRO_SEEN_KEY)
-      .then((seen) => {
-        if (active) setIntroSeen(seen === "yes");
+    // Opened from a shared link: go straight to it. The video waits for an
+    // ordinary launch, so it is not marked as seen (R9 finding 3).
+    Promise.all([
+      SecureStore.getItemAsync(INTRO_SEEN_KEY),
+      Linking.getInitialURL().catch(() => null),
+    ])
+      .then(([seen, url]) => {
+        if (active) setIntroSeen(seen === "yes" || openedFromLink(url));
       })
       .catch(() => {
         if (active) setIntroSeen(false);
@@ -99,62 +106,73 @@ export default function RootLayout() {
       <AuthProvider>
         <PushBridge />
         <StatusBar style={dark ? "light" : "dark"} />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.text,
-            headerTitleStyle: { fontFamily: fonts.semibold },
-            headerShadowVisible: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
+        {/* While the opening video plays, screen readers stay on it (R9). */}
+        <View
+          style={{ flex: 1 }}
+          accessibilityElementsHidden={showIntro}
+          importantForAccessibility={showIntro ? "no-hide-descendants" : "auto"}
+          aria-hidden={showIntro}
         >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="sign-in"
-            options={{ presentation: "modal", title: "Sign in" }}
-          />
-          <Stack.Screen name="pitch/[pitchId]" options={{ title: "Pitch" }} />
-          <Stack.Screen name="rebook" options={{ title: "Book again" }} />
-          <Stack.Screen
-            name="venues/[facilityId]"
-            options={{ title: "Venue" }}
-          />
-          <Stack.Screen
-            name="checkout/[holdId]"
-            options={{ title: "Checkout" }}
-          />
-          <Stack.Screen
-            name="pay/test/[attemptId]"
-            options={{ presentation: "modal", title: "Pay" }}
-          />
-          <Stack.Screen
-            name="booking/[reference]"
-            options={{ title: "Booking" }}
-          />
-          <Stack.Screen name="venue/new" options={{ title: "Add booking" }} />
-          <Stack.Screen
-            name="venue/setup"
-            options={{ title: "Set up your venue" }}
-          />
-          <Stack.Screen name="venue/manage" options={{ title: "Your venue" }} />
-          <Stack.Screen
-            name="venue/details"
-            options={{ title: "Venue details" }}
-          />
-          <Stack.Screen name="venue/pin" options={{ title: "Map pin" }} />
-          <Stack.Screen
-            name="venue/hours"
-            options={{ title: "Hours and prices" }}
-          />
-          <Stack.Screen
-            name="admin/venues"
-            options={{ title: "Review venues" }}
-          />
-          <Stack.Screen
-            name="venue/booking/[reservationId]"
-            options={{ title: "Booking" }}
-          />
-        </Stack>
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.text,
+              headerTitleStyle: { fontFamily: fonts.semibold },
+              headerShadowVisible: false,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="sign-in"
+              options={{ presentation: "modal", title: "Sign in" }}
+            />
+            <Stack.Screen name="pitch/[pitchId]" options={{ title: "Pitch" }} />
+            <Stack.Screen name="rebook" options={{ title: "Book again" }} />
+            <Stack.Screen
+              name="venues/[facilityId]"
+              options={{ title: "Venue" }}
+            />
+            <Stack.Screen
+              name="checkout/[holdId]"
+              options={{ title: "Checkout" }}
+            />
+            <Stack.Screen
+              name="pay/test/[attemptId]"
+              options={{ presentation: "modal", title: "Pay" }}
+            />
+            <Stack.Screen
+              name="booking/[reference]"
+              options={{ title: "Booking" }}
+            />
+            <Stack.Screen name="venue/new" options={{ title: "Add booking" }} />
+            <Stack.Screen
+              name="venue/setup"
+              options={{ title: "Set up your venue" }}
+            />
+            <Stack.Screen
+              name="venue/manage"
+              options={{ title: "Your venue" }}
+            />
+            <Stack.Screen
+              name="venue/details"
+              options={{ title: "Venue details" }}
+            />
+            <Stack.Screen name="venue/pin" options={{ title: "Map pin" }} />
+            <Stack.Screen
+              name="venue/hours"
+              options={{ title: "Hours and prices" }}
+            />
+            <Stack.Screen
+              name="admin/venues"
+              options={{ title: "Review venues" }}
+            />
+            <Stack.Screen
+              name="venue/booking/[reservationId]"
+              options={{ title: "Booking" }}
+            />
+          </Stack>
+        </View>
         {showIntro && <LaunchVideo onDone={finishIntro} />}
       </AuthProvider>
     </QueryClientProvider>

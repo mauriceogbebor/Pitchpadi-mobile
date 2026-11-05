@@ -3321,6 +3321,216 @@
         }
       }
     },
+    "/v1/public/search/venues": {
+      "get": {
+        "operationId": "searchVenues",
+        "summary": "The same search as searchPitches, by venue: each venue once with all its matching pitches; 10 venues per page, venues with something open first",
+        "description": "No sign-in required.",
+        "tags": [
+          "Public"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "5-a-side",
+                "7-a-side"
+              ],
+              "description": "Only this pitch type"
+            }
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "enum": [
+                    60
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    90
+                  ]
+                },
+                {
+                  "type": "number",
+                  "enum": [
+                    120
+                  ]
+                }
+              ],
+              "description": "Game length in minutes. Only pitches with matching open options are returned"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Budget in kobo: only lengths that cost at most this"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "morning",
+                "afternoon",
+                "evening"
+              ],
+              "description": "Start times before noon, noon to 5 pm, or from 5 pm (Lagos time)"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recommended",
+                "cheapest",
+                "soonest",
+                "nearest"
+              ],
+              "description": "Open pitches always come first. recommended uses distance when near is given; nearest needs near"
+            }
+          },
+          {
+            "name": "near",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?\\d{1,2}(\\.\\d+)?,-?\\d{1,3}(\\.\\d+)?$",
+              "description": "lat,lng of the player, rounded by the client to about 1 km. Used only to work out distances; never stored or logged"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "area": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "durationMinutes": {
+                      "nullable": true,
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    },
+                    "matchedVenues": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "openVenues": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "openPitches": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "venues": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/VenueResult"
+                      }
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "area",
+                    "page",
+                    "durationMinutes",
+                    "hasMore",
+                    "matchedVenues",
+                    "openVenues",
+                    "openPitches",
+                    "venues"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/venues/{facilityId}": {
       "get": {
         "operationId": "getPublicVenue",
@@ -6256,6 +6466,30 @@
           "endsNextDay",
           "amountMinor",
           "amountDueMinor"
+        ],
+        "additionalProperties": false
+      },
+      "VenueResult": {
+        "type": "object",
+        "properties": {
+          "venue": {
+            "$ref": "#/components/schemas/PublicVenue"
+          },
+          "distanceKm": {
+            "nullable": true,
+            "type": "number"
+          },
+          "pitches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PitchAvailability"
+            }
+          }
+        },
+        "required": [
+          "venue",
+          "distanceKm",
+          "pitches"
         ],
         "additionalProperties": false
       },

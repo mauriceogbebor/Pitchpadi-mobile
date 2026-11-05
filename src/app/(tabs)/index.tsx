@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { listAreas, searchPitches } from "@/api/generated";
+import { listAreas, searchVenues } from "@/api/generated";
 import { Chip } from "@/components/chips";
 import {
   activeFilters,
@@ -49,8 +49,7 @@ import {
   playSelectionLabel,
   resultsView,
 } from "@/lib/stale-results";
-import { groupVenues } from "@/lib/discovery";
-import { mergePages, shownLine } from "@/lib/search-pages";
+import { mergePages, openLine, shownLine } from "@/lib/search-pages";
 import { useNearMe } from "@/lib/use-near-me";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -113,7 +112,7 @@ export default function PlayScreen() {
         selectionKey,
         selectionLabel: playSelectionLabel({ ...selection, areaName }, today),
       };
-      const response = await searchPitches({
+      const response = await searchVenues({
         date,
         duration,
         area: area ?? undefined,
@@ -132,7 +131,8 @@ export default function PlayScreen() {
       return { ...response.data, ...tag };
     },
     initialPageParam: 1,
-    // 20 pitches per page; "Show more pitches" asks for the next (R7 review).
+    // 10 venues per page, each with all its matching pitches; "Show more
+    // venues" asks for the next (R7 review, by venue since R9).
     getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
     // Keep the last answer on screen while a new choice loads (slow networks),
     // but only labelled and with booking paused: see `view` below.
@@ -148,10 +148,9 @@ export default function PlayScreen() {
   });
   const stale = view.kind === "stale";
   const merged = mergePages(pages);
-  const results = merged.results;
-  const venues = groupVenues(results);
-  const open = merged.openCount;
-  const partial = shownLine(results.length, merged.matched);
+  const venues = merged.venues;
+  const open = merged.openPitches;
+  const partial = shownLine(venues.length, merged.matchedVenues);
   const filterCount = activeFilters(filters);
 
   async function toggleNearMe() {
@@ -329,9 +328,8 @@ export default function PlayScreen() {
             ) : (
               <Body tone="muted" accessibilityLiveRegion="polite">
                 <Body weight="semibold">
-                  {open === 1 ? "1 pitch" : `${open} pitches`}
+                  {openLine(open, merged.openVenues)}
                 </Body>{" "}
-                open{" "}
                 {date === today
                   ? "today"
                   : `on ${day.weekday} ${day.day} ${day.month}`}
@@ -351,17 +349,17 @@ export default function PlayScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                {venues.map((venue) => (
+                {venues.map((item) => (
                   <VenueResultCard
-                    key={venue.id}
-                    results={venue.pitches}
+                    key={item.venue.id}
+                    results={item.pitches}
                     date={date}
                     duration={duration}
                     disabled
                   />
                 ))}
               </View>
-            ) : results.length === 0 ? (
+            ) : venues.length === 0 ? (
               <Notice
                 title={
                   filterCount
@@ -415,10 +413,10 @@ export default function PlayScreen() {
                     />
                   </Card>
                 ) : null}
-                {venues.map((venue) => (
+                {venues.map((item) => (
                   <VenueResultCard
-                    key={venue.id}
-                    results={venue.pitches}
+                    key={item.venue.id}
+                    results={item.pitches}
                     date={date}
                     duration={duration}
                   />
@@ -439,8 +437,8 @@ export default function PlayScreen() {
                         size={14}
                         style={{ textAlign: "center" }}
                       >
-                        We could not load more pitches. Check your connection
-                        and try again.
+                        We could not load more venues. Check your connection and
+                        try again.
                       </Body>
                     ) : null}
                     {search.hasNextPage ? (
@@ -450,9 +448,9 @@ export default function PlayScreen() {
                         label={
                           search.isFetchNextPageError
                             ? "Try again"
-                            : "Show more pitches"
+                            : "Show more venues"
                         }
-                        accessibilityLabel={`Show more pitches. ${partial}`}
+                        accessibilityLabel={`Show more venues. ${partial}`}
                         busy={search.isFetchingNextPage}
                         disabled={search.isFetchingNextPage}
                         onPress={() => void search.fetchNextPage()}

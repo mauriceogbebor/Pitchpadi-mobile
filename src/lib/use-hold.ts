@@ -14,6 +14,12 @@ import { rememberCheckout } from "@/lib/use-device-checkouts";
 type ErrorBody = { error?: string };
 
 /**
+ * Retry keys for this app session, by time and length. They back up the saved
+ * keys, so a signed-in player whose phone storage fails still retries safely.
+ */
+const memoryKeys = new Map<string, string>();
+
+/**
  * Holding a time and opening checkout, shared by the pitch page and "Book
  * again". One idempotency key per time and length, so retrying after a
  * dropped connection returns the same hold instead of trying to book twice.
@@ -32,18 +38,30 @@ export function useHoldSlot(onTaken?: () => void) {
     const id = slotId(input);
     setHolding(id);
     setError(null);
-    let key: string;
+    const guest = auth.status !== "signedIn";
+    let saved: string | undefined;
     try {
-      key =
-        (await pendingHolds()).find((item) => item.slot === id)?.key ??
-        newIdempotencyKey();
-      // Save before the request. If storage fails, do not create a hold that
-      // the guest cannot recover after a dropped response and app restart.
+      saved = (await pendingHolds()).find((item) => item.slot === id)?.key;
+    } catch {
+      // Unreadable storage: a guest is stopped below when saving fails too.
+    }
+    saved ??= memoryKeys.get(id);
+    const reused = saved !== undefined;
+    const key = saved ?? newIdempotencyKey();
+    memoryKeys.set(id, key);
+    try {
+      // Save before the request, so a dropped response can be recovered after
+      // an app restart (R8F).
       await savePending(id, key);
     } catch {
-      setError("We could not save this checkout on your phone. Try again.");
-      setHolding(null);
-      return;
+      // A guest's hold can only be found again from this phone, so do not
+      // make one the guest could lose. Signed-in players get it back from
+      // their account: carry on with the key kept in memory (R9 finding 1).
+      if (guest) {
+        setError("We could not save this checkout on your phone. Try again.");
+        setHolding(null);
+        return;
+      }
     }
     try {
       const response = await createHold(
@@ -60,23 +78,34 @@ export function useHoldSlot(onTaken?: () => void) {
           response.data.hold.status !== "pending_payment"
         ) {
           await clearPending(key).catch(() => undefined);
-          setError("That hold has ended. Choose an open time and try again.");
+          memoryKeys.delete(id);
+          // A retry can return an earlier hold that has since run out; the
+          // key is cleared, so the next tap asks afresh (R9 finding 4).
+          setError(
+            reused
+              ? "Your earlier hold ran out. Tap again to hold this time."
+              : "That hold has ended. Choose an open time and try again.",
+          );
           onTaken?.();
           return;
         }
         // A guest's checkout is only findable again from this phone (R7);
         // signed-in players get theirs back from their account.
-        const saved =
-          auth.status === "signedIn" ||
-          (await rememberCheckout(response.data.hold.id));
-        if (saved) await clearPending(key).catch(() => undefined);
+        const kept = !guest || (await rememberCheckout(response.data.hold.id));
+        if (kept) {
+          await clearPending(key).catch(() => undefined);
+          memoryKeys.delete(id);
+        }
         router.push({
           pathname: "/checkout/[holdId]",
           params: { holdId: response.data.hold.id },
         });
         return;
       }
-      if (response.status < 500) await clearPending(key).catch(() => undefined);
+      if (response.status < 500) {
+        await clearPending(key).catch(() => undefined);
+        memoryKeys.delete(id);
+      }
       setError(
         (response.data as ErrorBody).error ??
           "We could not hold this time. Try again.",

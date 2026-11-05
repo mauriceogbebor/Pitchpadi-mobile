@@ -177,7 +177,7 @@ function VenueCard({
       {venue.facilities.map((facility) => (
         <View key={facility.id} style={{ gap: 2 }}>
           <Body weight="semibold">
-            {facility.name} · {facility.pitchCount}{" "}
+            {facility.name}, {facility.pitchCount}{" "}
             {facility.pitchCount === 1 ? "pitch" : "pitches"}
           </Body>
           <Body tone="muted">
