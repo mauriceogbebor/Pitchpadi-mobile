@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — Wordmark logo (0.13.0, SV-05)
+
+- The logo is now the name: "PitchPadi" with a volt ball for each i's dot, on the welcome screen. The app icon, splash and sign-in use the new centre-spot P, a P drawn by the halfway line and centre circle with the ball on the spot. It replaces the floodlight P from 0.12.0.
+
 ## 2026-11-05 — New logo (0.12.0, SV-04)
 
 - PitchPadi has its own logo, a P drawn as a floodlight with four lit lamps. It is now the app icon on iOS and Android (including Android's adaptive and one-colour themed icons) and the splash screen, and appears on the welcome and sign-in screens. The Expo placeholder icons are gone.

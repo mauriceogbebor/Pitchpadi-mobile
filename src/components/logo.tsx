@@ -1,77 +1,95 @@
-import { StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
-import { fonts, palette } from "@/theme/tokens";
+import { View } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
+import { palette } from "@/theme/tokens";
+import { WORDMARK } from "./wordmark-paths";
 
 /*
- * The PitchPadi mark (SV-04): a P drawn as a floodlight, the pole as its stem
- * and four lit lamps in its bowl. The masters and icon set are in
- * pitchpadi-fe/docs/brand; this draws the same geometry, so it stays sharp at
- * any size without an image download.
+ * The PitchPadi logo (SV-05): the wordmark, "PitchPadi" with a volt ball for
+ * each i's dot, and the mark, a P drawn by the halfway line and half the
+ * centre circle with the ball on the centre spot. Both are drawn as vectors,
+ * so they stay sharp at any size without an image download. Masters and rules
+ * are in pitchpadi-fe/docs/brand.
  */
 
-const LAMPS = [
-  [244, 158],
-  [306, 158],
-  [244, 222],
-  [306, 222],
-] as const;
+type Tone = "onDark" | "onLight";
 
-/** The mark alone. "onDark" is chalk with volt lamps; "onLight" is pitch green. */
+/** The mark alone: the P with the ball on its centre spot. */
 export function LogoMark({
   height = 32,
   tone = "onDark",
 }: {
   height?: number;
-  tone?: "onDark" | "onLight";
+  tone?: Tone;
 }) {
-  const body = tone === "onDark" ? palette.chalk : palette.pitch;
+  const line = tone === "onDark" ? palette.chalk : palette.pitch;
   return (
     <Svg
-      width={(height * 224) / 312}
+      width={(height * 242) / 384}
       height={height}
-      viewBox="148 100 224 312"
+      viewBox="110 96 242 384"
       aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Rect x={148} y={100} width={60} height={312} rx={30} fill={body} />
-      <Path d="M178 100 H282 A90 90 0 0 1 282 280 H178 Z" fill={body} />
-      {LAMPS.map(([cx, cy]) => (
-        <Circle
-          key={`${cx}-${cy}`}
-          cx={cx}
-          cy={cy}
-          r={23}
-          fill={palette.volt}
-        />
-      ))}
+      <Path
+        d="M192 448 V128 A128 128 0 0 1 192 384"
+        fill="none"
+        stroke={line}
+        strokeWidth={64}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <Circle cx={192} cy={256} r={50} fill={palette.volt} />
     </Svg>
   );
 }
 
-/** Mark and name together, for dark surfaces such as the welcome screen. */
-export function Logo({ height = 30 }: { height?: number }) {
+/**
+ * The wordmark. On light surfaces each ball gets a thin pitch-green ring, so
+ * it still reads at small sizes.
+ */
+export function Wordmark({
+  height = 32,
+  tone = "onDark",
+  label = "PitchPadi",
+}: {
+  height?: number;
+  tone?: Tone;
+  /** Read by screen readers; the drawing itself is hidden from them. */
+  label?: string;
+}) {
+  const letters = tone === "onDark" ? palette.chalk : palette.pitch;
+  const ring = tone === "onLight";
+  // The heading role sits on a wrapper: on the web, an Svg given a role renders
+  // as that element instead of an <svg>, and draws nothing.
   return (
     <View
-      style={styles.row}
       accessible
       accessibilityRole="header"
-      accessibilityLabel="PitchPadi"
+      accessibilityLabel={label}
+      aria-label={label}
     >
-      <LogoMark height={height} />
-      <Text style={[styles.name, { fontSize: height * 0.86 }]}>
-        Pitch<Text style={styles.accent}>Padi</Text>
-      </Text>
+      <Svg
+        width={(height * WORDMARK.width) / WORDMARK.height}
+        height={height}
+        viewBox={`0 0 ${WORDMARK.width} ${WORDMARK.height}`}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        <Path d={WORDMARK.letters} fill={letters} />
+        {WORDMARK.dots.map((cx) => (
+          <Circle
+            key={cx}
+            cx={cx}
+            cy={WORDMARK.dotY}
+            r={WORDMARK.dotR}
+            fill={palette.volt}
+            stroke={ring ? palette.pitch : undefined}
+            strokeWidth={ring ? 22 : 0}
+          />
+        ))}
+      </Svg>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 10 },
-  name: {
-    color: palette.white,
-    fontFamily: fonts.displayHeavy,
-    letterSpacing: -0.8,
-  },
-  accent: { color: palette.volt },
-});
