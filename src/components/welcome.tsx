@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { listAreas } from "@/api/generated";
 import { AreaPicker } from "@/components/area-picker";
+import { Logo } from "@/components/logo";
 import { Body, Button } from "@/components/ui";
 import type { WelcomeChoice } from "@/lib/welcome";
 import { fonts, palette, space } from "@/theme/tokens";
@@ -67,9 +68,7 @@ export function Welcome({
         <Rect width="100%" height="100%" fill="url(#scrim)" />
       </Svg>
       <SafeAreaView style={styles.content}>
-        <Text style={styles.name} accessibilityRole="header">
-          Pitch<Text style={styles.accent}>Padi</Text>
-        </Text>
+        <Logo />
         <Animated.View
           entering={motion ? FadeInDown.duration(320).delay(250) : undefined}
           style={styles.bottom}
@@ -162,14 +161,6 @@ const styles = StyleSheet.create({
     paddingTop: space.lg,
     paddingBottom: space.lg,
   },
-  name: {
-    color: palette.white,
-    fontFamily: fonts.displayHeavy,
-    fontSize: 26,
-    lineHeight: 30,
-    letterSpacing: -0.8,
-  },
-  accent: { color: palette.volt },
   bottom: { gap: space.md, maxWidth: 520 },
   title: {
     color: palette.white,

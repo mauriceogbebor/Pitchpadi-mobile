@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { requestSignInCode, verifySignInCode } from "@/api/generated";
 import { useAuth } from "@/auth/auth-context";
+import { LogoMark } from "@/components/logo";
 import { PitchBand } from "@/components/pitch-band";
 import { Body, Button, Field, Heading, Notice, Screen } from "@/components/ui";
 import { palette, space } from "@/theme/tokens";
@@ -102,6 +103,7 @@ export default function SignInScreen() {
               markings="centre"
               contentStyle={{ padding: space.xl, gap: space.sm }}
             >
+              <LogoMark height={40} />
               <Heading style={{ color: palette.white }}>
                 Sign in with your phone
               </Heading>

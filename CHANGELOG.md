@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — New logo (0.12.0, SV-04)
+
+- PitchPadi has its own logo, a P drawn as a floodlight with four lit lamps. It is now the app icon on iOS and Android (including Android's adaptive and one-colour themed icons) and the splash screen, and appears on the welcome and sign-in screens. The Expo placeholder icons are gone.
+
 ## 2026-11-05 — Welcome screen (0.11.0, SV-02)
 
 - The first launch now opens on a welcome screen with floodlit football looping behind it. Choose your area, use your location, or browse all of Lagos, and Play opens on that choice. It shows once, never over a shared link, and as a still picture with reduced motion. It replaces the 3.5-second opening video.
