@@ -923,6 +923,19 @@ export type AdminMeUser = {
   phone: string;
 };
 
+export type AdminMeCounts = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venuesPending: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  refundsDue: number;
+};
+
 export type AdminMeMfa = {
   enrolled: boolean;
   verified: boolean;
@@ -948,7 +961,266 @@ export interface AdminMe {
   user: AdminMeUser;
   roles: AdminRole[];
   permissions: string[];
+  counts: AdminMeCounts;
   mfa: AdminMeMfa;
+}
+
+export type AdminOverviewPeriod = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  days: number;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  from: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  to: string;
+};
+
+export type AdminOverviewTotals = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  bookings: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  online: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venue: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  valueMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  onlineValueMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  cancelled: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  averageMinor: number;
+};
+
+export type AdminOverviewPrevious = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  bookings: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  online: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venue: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  valueMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  onlineValueMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  cancelled: number;
+};
+
+export type AdminOverviewDailyItem = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  date: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  online: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venue: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  valueMinor: number;
+};
+
+export type AdminOverviewAttention = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venuesPending: number;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  oldestPendingAt: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  refundsDue: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  refundsDueMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  failedPayments24h: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  stuckPayments: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  stuckHolds: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  hiddenVenues: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  blockedUsers: number;
+};
+
+export type AdminOverviewGrowth = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  newPlayers: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  newVenues: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  liveVenues: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  livePitches: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  players: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  repeatPlayers: number;
+};
+
+export type AdminOverviewBusiestHoursItem = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  hour: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+};
+
+export type AdminOverviewBusiestAreasItem = {
+  name: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  valueMinor: number;
+};
+
+export type AdminOverviewTopVenuesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  /** @nullable */
+  area: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  online: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  valueMinor: number;
+};
+
+export type AdminOverviewQuietVenuesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  lastBookingAt: string | null;
+};
+
+export interface AdminOverview {
+  period: AdminOverviewPeriod;
+  totals: AdminOverviewTotals;
+  previous: AdminOverviewPrevious;
+  daily: AdminOverviewDailyItem[];
+  attention: AdminOverviewAttention;
+  growth: AdminOverviewGrowth;
+  busiestHours: AdminOverviewBusiestHoursItem[];
+  busiestAreas: AdminOverviewBusiestAreasItem[];
+  topVenues: AdminOverviewTopVenuesItem[];
+  quietVenues: AdminOverviewQuietVenuesItem[];
 }
 
 export interface AdminBooking {
@@ -974,6 +1246,34 @@ export interface AdminBooking {
   customerName: string | null;
   /** @nullable */
   customerPhone: string | null;
+  /** @nullable */
+  method: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+}
+
+export interface AdminBookingList {
+  bookings: AdminBooking[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pageSize: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  total: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  confirmedValueMinor: number;
 }
 
 export type AdminBookingDetailBooking = {
@@ -999,6 +1299,10 @@ export type AdminBookingDetailBooking = {
   customerName: string | null;
   /** @nullable */
   customerPhone: string | null;
+  /** @nullable */
+  method: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
   /** @nullable */
   releaseReason: string | null;
 };
@@ -1129,6 +1433,248 @@ export interface VenueForReview {
   facilities: VenueForReviewFacilitiesItem[];
 }
 
+export type AdminVenueListVenuesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  status: VenueStatus;
+  hidden: boolean;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+  areas: string[];
+  /** @nullable */
+  ownerPhone: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pitches: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  livePitches: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  photos: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games30d: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  value30dMinor: number;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  lastBookingAt: string | null;
+};
+
+export interface AdminVenueList {
+  venues: AdminVenueListVenuesItem[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pageSize: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  total: number;
+}
+
+/**
+ * @nullable
+ */
+export type AdminVenueProfileVenueReview = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  /** @nullable */
+  by: string | null;
+  /** @nullable */
+  note: string | null;
+} | null;
+
+/**
+ * @nullable
+ */
+export type AdminVenueProfileVenueHidden = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  /** @nullable */
+  reason: string | null;
+} | null;
+
+export type AdminVenueProfileVenue = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  status: VenueStatus;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+  /** @nullable */
+  review: AdminVenueProfileVenueReview;
+  /** @nullable */
+  hidden: AdminVenueProfileVenueHidden;
+};
+
+export type AdminVenueProfilePeopleItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  userId: string;
+  phone: string;
+  role: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  since: string;
+};
+
+export type AdminVenueProfileFacilitiesItemPitchesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  type: string;
+  published: boolean;
+  paymentMode: string;
+  /** @nullable */
+  policy: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     * @nullable
+     */
+  minPriceMinor: number | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     * @nullable
+     */
+  maxPriceMinor: number | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  openDays: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games30d: number;
+};
+
+export type AdminVenueProfileFacilitiesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  area: string;
+  address: string;
+  /** @nullable */
+  landmark: string | null;
+  amenities: string[];
+  hasMapPin: boolean;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  photos: number;
+  pitches: AdminVenueProfileFacilitiesItemPitchesItem[];
+};
+
+export type AdminVenueProfileStats = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games30d: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  online30d: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  value30dMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  onlineValue30dMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  cancelled30d: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  upcoming: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  allTime: number;
+};
+
+export type AdminVenueProfileDailyItem = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  date: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+};
+
+export type AdminVenueProfileRecentBookingsItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  reference: string;
+  status: string;
+  pitchName: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  source: string;
+};
+
+export type AdminVenueProfileHistoryItem = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  action: string;
+  actorType: string;
+  /** @nullable */
+  actorPhone: string | null;
+};
+
+export interface AdminVenueProfile {
+  venue: AdminVenueProfileVenue;
+  people: AdminVenueProfilePeopleItem[];
+  facilities: AdminVenueProfileFacilitiesItem[];
+  stats: AdminVenueProfileStats;
+  daily: AdminVenueProfileDailyItem[];
+  recentBookings: AdminVenueProfileRecentBookingsItem[];
+  history: AdminVenueProfileHistoryItem[];
+}
+
 export type AuditEventActorType = typeof AuditEventActorType[keyof typeof AuditEventActorType];
 
 
@@ -1163,38 +1709,247 @@ export interface AuditEvent {
   details: AuditEventDetails;
 }
 
+export type AdminPeopleListPeopleItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  phone: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  joinedAt: string;
+  blocked: boolean;
+  venues: string[];
+  teamRoles: string[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  spendMinor: number;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  lastGameAt: string | null;
+};
+
+export interface AdminPeopleList {
+  people: AdminPeopleListPeopleItem[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pageSize: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  total: number;
+}
+
 /**
  * @nullable
  */
-export type AdminUserBlocked = {
+export type AdminPersonProfilePersonBlocked = {
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
   at: string;
   /** @nullable */
   reason: string | null;
 } | null;
 
-export type AdminUserVenuesItem = {
+export type AdminPersonProfilePerson = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  phone: string;
+  /** @nullable */
+  email: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  joinedAt: string;
+  /** @nullable */
+  blocked: AdminPersonProfilePersonBlocked;
+};
+
+export type AdminPersonProfileVenuesItem = {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
   name: string;
   role: string;
+  status: string;
 };
 
-export interface AdminUser {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  id: string;
-  phone: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
-  joinedAt: string;
-  /** @nullable */
-  blocked: AdminUserBlocked;
-  venues: AdminUserVenuesItem[];
-  teamRoles: string[];
+export type AdminPersonProfileSessionsItem = {
+  kind: string;
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  activeSessions: number;
+  count: number;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  lastSignInAt: string | null;
+};
+
+export type AdminPersonProfileStats = {
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  games: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  cancelled: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  spendMinor: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  venues: number;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  firstGameAt: string | null;
+};
+
+export type AdminPersonProfileGamesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  reference: string;
+  status: string;
+  pitchName: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  venueName: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  organizationId: string;
+};
+
+export interface AdminPersonProfile {
+  person: AdminPersonProfilePerson;
+  venues: AdminPersonProfileVenuesItem[];
+  teamRoles: string[];
+  sessions: AdminPersonProfileSessionsItem[];
+  stats: AdminPersonProfileStats;
+  games: AdminPersonProfileGamesItem[];
+}
+
+export type AdminPaymentListPaymentsItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  provider: string;
+  providerReference: string;
+  method: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  status: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  updatedAt: string;
+  /** @nullable */
+  customerName: string | null;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  reservationId: string;
+  reference: string;
+  reservationStatus: string;
+  venueName: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  organizationId: string;
+};
+
+export interface AdminPaymentList {
+  payments: AdminPaymentListPaymentsItem[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pageSize: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  total: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+}
+
+export type AdminAuditListEventsItemDetails = {[key: string]: unknown};
+
+export type AdminAuditListEventsItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  actorUserId: string;
+  actorPhone: string;
+  action: string;
+  targetType: string;
+  /** @nullable */
+  targetId: string | null;
+  /**
+     * @nullable
+     * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+     */
+  organizationId: string | null;
+  /** @nullable */
+  venueName: string | null;
+  /** @nullable */
+  reason: string | null;
+  details: AdminAuditListEventsItemDetails;
+};
+
+export interface AdminAuditList {
+  events: AdminAuditListEventsItem[];
+  actions: string[];
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  page: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pageSize: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  total: number;
 }
 
 export interface TeamMember {
@@ -2137,13 +2892,54 @@ export type VerifyAdminMfaBody = {
   code: string;
 };
 
-export type SearchAdminBookingsParams = {
-  q: string;
+export type GetAdminOverviewParams = {
+  days?: GetAdminOverviewDays;
 };
 
-export type SearchAdminBookings200 = {
-  bookings: AdminBooking[];
+export type GetAdminOverviewDays = typeof GetAdminOverviewDays[keyof typeof GetAdminOverviewDays];
+
+
+export const GetAdminOverviewDays = {
+  NUMBER_7: '7',
+  NUMBER_30: '30',
+  NUMBER_90: '90',
+} as const;
+
+export type ListAdminBookingsParams = {
+  q?: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  from?: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  to?: string;
+  status?: ListAdminBookingsStatus;
+  source?: ListAdminBookingsSource;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  organizationId?: string;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
 };
+
+export type ListAdminBookingsStatus = typeof ListAdminBookingsStatus[keyof typeof ListAdminBookingsStatus];
+
+
+export const ListAdminBookingsStatus = {
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
+  held: 'held',
+  expired: 'expired',
+  payment_failed: 'payment_failed',
+} as const;
+
+export type ListAdminBookingsSource = typeof ListAdminBookingsSource[keyof typeof ListAdminBookingsSource];
+
+
+export const ListAdminBookingsSource = {
+  online: 'online',
+  manual: 'manual',
+} as const;
 
 export type CancelBookingOnBehalfBody = {
   /**
@@ -2200,6 +2996,27 @@ export type ListVenuesForReviewParams = {
 export type ListVenuesForReview200 = {
   venues: VenueForReview[];
 };
+
+export type ListAdminVenuesParams = {
+  status?: ListAdminVenuesStatus;
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
+};
+
+export type ListAdminVenuesStatus = typeof ListAdminVenuesStatus[keyof typeof ListAdminVenuesStatus];
+
+
+export const ListAdminVenuesStatus = {
+  all: 'all',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  hidden: 'hidden',
+} as const;
 
 export type GetAdminVenuePhotos200FacilitiesItem = {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
@@ -2279,12 +3096,57 @@ export type GetAdminAuditEvents200 = {
   events: AuditEvent[];
 };
 
-export type FindAdminUserParams = {
-  phone: string;
+export type ListAdminPeopleParams = {
+  kind?: ListAdminPeopleKind;
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
 };
 
-export type FindAdminUser200 = {
-  user: AdminUser | null;
+export type ListAdminPeopleKind = typeof ListAdminPeopleKind[keyof typeof ListAdminPeopleKind];
+
+
+export const ListAdminPeopleKind = {
+  all: 'all',
+  players: 'players',
+  owners: 'owners',
+  team: 'team',
+  blocked: 'blocked',
+} as const;
+
+export type ListAdminPaymentsParams = {
+  status?: ListAdminPaymentsStatus;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
+};
+
+export type ListAdminPaymentsStatus = typeof ListAdminPaymentsStatus[keyof typeof ListAdminPaymentsStatus];
+
+
+export const ListAdminPaymentsStatus = {
+  all: 'all',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  pending: 'pending',
+  abandoned: 'abandoned',
+  expired: 'expired',
+} as const;
+
+export type ListTeamAuditParams = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  actorUserId?: string;
+  action?: string;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  page?: number;
 };
 
 export type BlockUserBody = {
@@ -6122,36 +6984,97 @@ export const adminLogout = async ( options?: Parameters<typeof appFetch>[1]): Pr
 
 
 
-export type searchAdminBookingsResponse200 = {
-  data: SearchAdminBookings200
+export type getAdminOverviewResponse200 = {
+  data: AdminOverview
   status: 200
 }
 
-export type searchAdminBookingsResponse400 = {
+export type getAdminOverviewResponse400 = {
   data: ErrorBody
   status: 400
 }
 
-export type searchAdminBookingsResponse401 = {
+export type getAdminOverviewResponse401 = {
   data: ErrorBody
   status: 401
 }
 
-export type searchAdminBookingsResponse403 = {
+export type getAdminOverviewResponse403 = {
   data: ErrorBody
   status: 403
 }
 
-export type searchAdminBookingsResponseSuccess = (searchAdminBookingsResponse200) & {
+export type getAdminOverviewResponseSuccess = (getAdminOverviewResponse200) & {
   headers: Headers;
 };
-export type searchAdminBookingsResponseError = (searchAdminBookingsResponse400 | searchAdminBookingsResponse401 | searchAdminBookingsResponse403) & {
+export type getAdminOverviewResponseError = (getAdminOverviewResponse400 | getAdminOverviewResponse401 | getAdminOverviewResponse403) & {
   headers: Headers;
 };
 
-export type searchAdminBookingsResponse = (searchAdminBookingsResponseSuccess | searchAdminBookingsResponseError)
+export type getAdminOverviewResponse = (getAdminOverviewResponseSuccess | getAdminOverviewResponseError)
 
-export const getSearchAdminBookingsUrl = (params: SearchAdminBookingsParams,) => {
+export const getGetAdminOverviewUrl = (params?: GetAdminOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/overview?${stringifiedParams}` : `/v1/admin/overview`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: metrics.read.
+ * @summary Totals, a daily chart, what needs attention, growth, busiest hours and areas, and the venue leaderboard, for the last 7, 30 or 90 Lagos days. No personal details
+ */
+export const getAdminOverview = async (params?: GetAdminOverviewParams, options?: Parameters<typeof appFetch>[1]): Promise<getAdminOverviewResponse> => {
+
+  return appFetch<getAdminOverviewResponse>(getGetAdminOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type listAdminBookingsResponse200 = {
+  data: AdminBookingList
+  status: 200
+}
+
+export type listAdminBookingsResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type listAdminBookingsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listAdminBookingsResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listAdminBookingsResponseSuccess = (listAdminBookingsResponse200) & {
+  headers: Headers;
+};
+export type listAdminBookingsResponseError = (listAdminBookingsResponse400 | listAdminBookingsResponse401 | listAdminBookingsResponse403) & {
+  headers: Headers;
+};
+
+export type listAdminBookingsResponse = (listAdminBookingsResponseSuccess | listAdminBookingsResponseError)
+
+export const getListAdminBookingsUrl = (params?: ListAdminBookingsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -6168,11 +7091,11 @@ export const getSearchAdminBookingsUrl = (params: SearchAdminBookingsParams,) =>
 
 /**
  * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: bookings.read.
- * @summary Find bookings and holds by reference (PP-…) or the player's phone number. The search is audited, without the phone number
+ * @summary With q: find bookings and holds by reference (PP-…) or the player's phone number. Without: every booking, latest game first, 25 a page, filtered by game date, status, source and venue. Audited, without a searched phone number
  */
-export const searchAdminBookings = async (params: SearchAdminBookingsParams, options?: Parameters<typeof appFetch>[1]): Promise<searchAdminBookingsResponse> => {
+export const listAdminBookings = async (params?: ListAdminBookingsParams, options?: Parameters<typeof appFetch>[1]): Promise<listAdminBookingsResponse> => {
 
-  return appFetch<searchAdminBookingsResponse>(getSearchAdminBookingsUrl(params),
+  return appFetch<listAdminBookingsResponse>(getListAdminBookingsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -6507,6 +7430,121 @@ export const getListVenuesForReviewUrl = (params?: ListVenuesForReviewParams,) =
 export const listVenuesForReview = async (params?: ListVenuesForReviewParams, options?: Parameters<typeof appFetch>[1]): Promise<listVenuesForReviewResponse> => {
 
   return appFetch<listVenuesForReviewResponse>(getListVenuesForReviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type listAdminVenuesResponse200 = {
+  data: AdminVenueList
+  status: 200
+}
+
+export type listAdminVenuesResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type listAdminVenuesResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listAdminVenuesResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listAdminVenuesResponseSuccess = (listAdminVenuesResponse200) & {
+  headers: Headers;
+};
+export type listAdminVenuesResponseError = (listAdminVenuesResponse400 | listAdminVenuesResponse401 | listAdminVenuesResponse403) & {
+  headers: Headers;
+};
+
+export type listAdminVenuesResponse = (listAdminVenuesResponseSuccess | listAdminVenuesResponseError)
+
+export const getListAdminVenuesUrl = (params?: ListAdminVenuesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/venues?${stringifiedParams}` : `/v1/admin/venues`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.read.
+ * @summary Every venue with owner, areas, pitches, photos and the last 30 days' games and value. Waiting for review first. Search by venue, facility or area name
+ */
+export const listAdminVenues = async (params?: ListAdminVenuesParams, options?: Parameters<typeof appFetch>[1]): Promise<listAdminVenuesResponse> => {
+
+  return appFetch<listAdminVenuesResponse>(getListAdminVenuesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getAdminVenueResponse200 = {
+  data: AdminVenueProfile
+  status: 200
+}
+
+export type getAdminVenueResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type getAdminVenueResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type getAdminVenueResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getAdminVenueResponseSuccess = (getAdminVenueResponse200) & {
+  headers: Headers;
+};
+export type getAdminVenueResponseError = (getAdminVenueResponse401 | getAdminVenueResponse403 | getAdminVenueResponse404) & {
+  headers: Headers;
+};
+
+export type getAdminVenueResponse = (getAdminVenueResponseSuccess | getAdminVenueResponseError)
+
+export const getGetAdminVenueUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/admin/venues/${organizationId}`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.read.
+ * @summary One venue: owner and staff, facilities and pitches with prices and policies, 30-day numbers and chart, latest games and history. Audited
+ */
+export const getAdminVenue = async (organizationId: string, options?: Parameters<typeof appFetch>[1]): Promise<getAdminVenueResponse> => {
+
+  return appFetch<getAdminVenueResponse>(getGetAdminVenueUrl(organizationId),
   {
     ...options,
     method: 'GET'
@@ -6950,36 +7988,36 @@ export const getAdminAuditEvents = async (organizationId: string,
 
 
 
-export type findAdminUserResponse200 = {
-  data: FindAdminUser200
+export type listAdminPeopleResponse200 = {
+  data: AdminPeopleList
   status: 200
 }
 
-export type findAdminUserResponse400 = {
+export type listAdminPeopleResponse400 = {
   data: ErrorBody
   status: 400
 }
 
-export type findAdminUserResponse401 = {
+export type listAdminPeopleResponse401 = {
   data: ErrorBody
   status: 401
 }
 
-export type findAdminUserResponse403 = {
+export type listAdminPeopleResponse403 = {
   data: ErrorBody
   status: 403
 }
 
-export type findAdminUserResponseSuccess = (findAdminUserResponse200) & {
+export type listAdminPeopleResponseSuccess = (listAdminPeopleResponse200) & {
   headers: Headers;
 };
-export type findAdminUserResponseError = (findAdminUserResponse400 | findAdminUserResponse401 | findAdminUserResponse403) & {
+export type listAdminPeopleResponseError = (listAdminPeopleResponse400 | listAdminPeopleResponse401 | listAdminPeopleResponse403) & {
   headers: Headers;
 };
 
-export type findAdminUserResponse = (findAdminUserResponseSuccess | findAdminUserResponseError)
+export type listAdminPeopleResponse = (listAdminPeopleResponseSuccess | listAdminPeopleResponseError)
 
-export const getFindAdminUserUrl = (params: FindAdminUserParams,) => {
+export const getListAdminPeopleUrl = (params?: ListAdminPeopleParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -6996,11 +8034,187 @@ export const getFindAdminUserUrl = (params: FindAdminUserParams,) => {
 
 /**
  * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: users.read.
- * @summary Find a person by phone number: their venues, team roles and whether they are blocked. Audited, without the phone number
+ * @summary Players, venue people and the team, newest first, 25 a page. Filter by kind or part of a phone number. Audited, without the number typed
  */
-export const findAdminUser = async (params: FindAdminUserParams, options?: Parameters<typeof appFetch>[1]): Promise<findAdminUserResponse> => {
+export const listAdminPeople = async (params?: ListAdminPeopleParams, options?: Parameters<typeof appFetch>[1]): Promise<listAdminPeopleResponse> => {
 
-  return appFetch<findAdminUserResponse>(getFindAdminUserUrl(params),
+  return appFetch<listAdminPeopleResponse>(getListAdminPeopleUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getAdminPersonResponse200 = {
+  data: AdminPersonProfile
+  status: 200
+}
+
+export type getAdminPersonResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type getAdminPersonResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type getAdminPersonResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getAdminPersonResponseSuccess = (getAdminPersonResponse200) & {
+  headers: Headers;
+};
+export type getAdminPersonResponseError = (getAdminPersonResponse401 | getAdminPersonResponse403 | getAdminPersonResponse404) & {
+  headers: Headers;
+};
+
+export type getAdminPersonResponse = (getAdminPersonResponseSuccess | getAdminPersonResponseError)
+
+export const getGetAdminPersonUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: users.read.
+ * @summary One person: games, spend, venues, team roles and active sign-ins. Audited
+ */
+export const getAdminPerson = async (userId: string, options?: Parameters<typeof appFetch>[1]): Promise<getAdminPersonResponse> => {
+
+  return appFetch<getAdminPersonResponse>(getGetAdminPersonUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type listAdminPaymentsResponse200 = {
+  data: AdminPaymentList
+  status: 200
+}
+
+export type listAdminPaymentsResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type listAdminPaymentsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listAdminPaymentsResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listAdminPaymentsResponseSuccess = (listAdminPaymentsResponse200) & {
+  headers: Headers;
+};
+export type listAdminPaymentsResponseError = (listAdminPaymentsResponse400 | listAdminPaymentsResponse401 | listAdminPaymentsResponse403) & {
+  headers: Headers;
+};
+
+export type listAdminPaymentsResponse = (listAdminPaymentsResponseSuccess | listAdminPaymentsResponseError)
+
+export const getListAdminPaymentsUrl = (params?: ListAdminPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/payments?${stringifiedParams}` : `/v1/admin/payments`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: payments.read.
+ * @summary Every payment attempt, newest first, 25 a page, by status (pending means not yet finished). Audited
+ */
+export const listAdminPayments = async (params?: ListAdminPaymentsParams, options?: Parameters<typeof appFetch>[1]): Promise<listAdminPaymentsResponse> => {
+
+  return appFetch<listAdminPaymentsResponse>(getListAdminPaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type listTeamAuditResponse200 = {
+  data: AdminAuditList
+  status: 200
+}
+
+export type listTeamAuditResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type listTeamAuditResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listTeamAuditResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listTeamAuditResponseSuccess = (listTeamAuditResponse200) & {
+  headers: Headers;
+};
+export type listTeamAuditResponseError = (listTeamAuditResponse400 | listTeamAuditResponse401 | listTeamAuditResponse403) & {
+  headers: Headers;
+};
+
+export type listTeamAuditResponse = (listTeamAuditResponseSuccess | listTeamAuditResponseError)
+
+export const getListTeamAuditUrl = (params?: ListTeamAuditParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/audit?${stringifiedParams}` : `/v1/admin/audit`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: audit.read.
+ * @summary The team's own audit trail, newest first, 25 a page: who did what, when and why
+ */
+export const listTeamAudit = async (params?: ListTeamAuditParams, options?: Parameters<typeof appFetch>[1]): Promise<listTeamAuditResponse> => {
+
+  return appFetch<listTeamAuditResponse>(getListTeamAuditUrl(params),
   {
     ...options,
     method: 'GET'

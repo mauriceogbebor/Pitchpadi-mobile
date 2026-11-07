@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-07 — API client for the admin redesign (AD-02)
+
+- The app's generated API client includes the new PitchPadi Admin routes. No app screens changed; no version change.
+
 ## 2026-11-07 — Venue review leaves the app (0.17.2, AD-01)
 
 - Account no longer shows "Review venues" for the PitchPadi team, and the review screen is removed. The team uses the separate PitchPadi Admin app (ADR-004).
