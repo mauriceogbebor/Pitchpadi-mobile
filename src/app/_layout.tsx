@@ -165,6 +165,7 @@ export default function RootLayout() {
               options={{ title: "Closures" }}
             />
             <Stack.Screen name="venue/staff" options={{ title: "Team" }} />
+            <Stack.Screen name="venue/photos" options={{ title: "Photos" }} />
             <Stack.Screen
               name="venue/add-pitch"
               options={{ title: "Add a pitch" }}

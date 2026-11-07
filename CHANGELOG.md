@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-07 — Venue photos (0.17.0, PH-01)
+
+- Owners add up to 3 photos of each venue from Manage, Photos; pick the cover and remove them. Photos are shrunk on the phone before sending.
+- Players see the cover on Play's venue cards, every photo on the venue page, and the cover on the pitch page. Photos are cached, so a card seen once costs no data again.
+- Adds `expo-image-picker` and `expo-image-manipulator`: phones need a new development build to pick photos.
+
 ## 2026-11-07 — Owner operations (0.16.0, OP-01)
 
 - Closures: close a pitch for whole days or part of a day from Manage, with a note for the team; reopen in one tap. If games are booked in that time, the app lists when.

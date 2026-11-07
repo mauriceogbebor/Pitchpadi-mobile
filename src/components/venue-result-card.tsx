@@ -2,9 +2,10 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import type { PitchAvailability } from "@/api/generated";
+import type { PitchAvailability, Photo } from "@/api/generated";
 import { TimeChip } from "@/components/chips";
 import { OfferPrice } from "@/components/offer-price";
+import { VenuePhoto } from "@/components/venue-photo";
 import { Body, Button, Card, Heading, Press } from "@/components/ui";
 import { formatDistance } from "@/lib/geo";
 import { formatDuration } from "@/lib/format";
@@ -14,11 +15,14 @@ import { useColors } from "@/theme/use-theme";
 /** One venue in the search order, with every matching pitch the API sent for it (R9). */
 export function VenueResultCard({
   results,
+  cover = null,
   date,
   duration,
   disabled = false,
 }: {
   results: PitchAvailability[];
+  /** The venue's cover photo, if it has one (Prompt 5). */
+  cover?: Photo | null;
   date: string;
   duration: number;
   disabled?: boolean;
@@ -40,7 +44,8 @@ export function VenueResultCard({
       },
     });
   return (
-    <Card style={{ gap: space.md }}>
+    <Card style={[{ gap: space.md }, cover ? styles.withPhoto : null]}>
+      {cover ? <VenuePhoto photo={cover} style={styles.cover} /> : null}
       <Press
         disabled={disabled}
         accessibilityRole="button"
@@ -145,6 +150,13 @@ export function VenueResultCard({
   );
 }
 const styles = StyleSheet.create({
+  withPhoto: { overflow: "hidden" },
+  // Bleeds to the card's edges; 16:7 keeps the card short on a small phone.
+  cover: {
+    marginTop: -space.lg,
+    marginHorizontal: -space.lg,
+    aspectRatio: 16 / 7,
+  },
   heading: {
     flexDirection: "row",
     alignItems: "center",

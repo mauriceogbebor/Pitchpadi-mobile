@@ -410,6 +410,7 @@ export default function PlayScreen() {
                   <VenueResultCard
                     key={item.venue.id}
                     results={item.pitches}
+                    cover={item.venue.cover}
                     date={date}
                     duration={duration}
                     disabled
@@ -474,6 +475,7 @@ export default function PlayScreen() {
                   <VenueResultCard
                     key={item.venue.id}
                     results={item.pitches}
+                    cover={item.venue.cover}
                     date={date}
                     duration={duration}
                   />

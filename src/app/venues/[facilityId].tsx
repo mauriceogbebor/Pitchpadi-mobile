@@ -2,7 +2,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getPublicVenue, type PitchAvailability } from "@/api/generated";
 import { TimeChip } from "@/components/chips";
@@ -20,6 +26,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { StaleBanner } from "@/components/stale-banner";
+import { VenuePhoto } from "@/components/venue-photo";
 import { AmenitiesSummary } from "@/components/amenities-summary";
 import { dayLabel, resultsView } from "@/lib/stale-results";
 import { dateParts, lagosToday, nextDates } from "@/lib/format";
@@ -77,6 +84,11 @@ export default function VenueProfileScreen() {
   const stale = view.kind === "stale";
   const info = venue.data?.venue;
   const pitches = venue.data?.pitches ?? [];
+  const photos = venue.data?.photos ?? [];
+  // One photo fills the width; with more, the next one peeks in.
+  const screen = useWindowDimensions();
+  const photoWidth =
+    Math.min(screen.width, 640) - space.lg * 2 - (photos.length > 1 ? 32 : 0);
   const day = dateParts(date);
   const open = pitches.filter((p) => p.startTimes.length > 0).length;
 
@@ -154,6 +166,30 @@ export default function VenueProfileScreen() {
                   />
                 </View>
               </PitchBand>
+
+              {photos.length ? (
+                <ScrollView
+                  horizontal
+                  snapToInterval={photoWidth + space.sm}
+                  decelerationRate="fast"
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: space.sm }}
+                  accessibilityLabel={`${photos.length} ${photos.length === 1 ? "photo" : "photos"} of ${info.name}`}
+                >
+                  {photos.map((photo) => (
+                    <VenuePhoto
+                      key={photo.id}
+                      photo={photo}
+                      size="large"
+                      style={{
+                        width: photoWidth,
+                        aspectRatio: 4 / 3,
+                        borderRadius: radius.lg,
+                      }}
+                    />
+                  ))}
+                </ScrollView>
+              ) : null}
 
               <Section title="Pick a day">
                 <DateStrip

@@ -660,6 +660,24 @@ export interface Closure {
   note: string | null;
 }
 
+export interface Photo {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  url: string;
+  cardUrl: string;
+  shareUrl: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  width: number;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  height: number;
+}
+
 export interface Member {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   userId: string;
@@ -801,6 +819,7 @@ export interface PublicVenue {
   landmark: string | null;
   amenities: Amenity[];
   location: GeoPoint | null;
+  cover: Photo | null;
 }
 
 export interface VenueResult {
@@ -1527,6 +1546,14 @@ export type AddClosure201 = {
   closure: Closure;
 };
 
+export type ListFacilityPhotos200 = {
+  photos: Photo[];
+};
+
+export type AddFacilityPhoto201 = {
+  photo: Photo;
+};
+
 export type ListMembers200 = {
   members: Member[];
 };
@@ -1760,6 +1787,7 @@ export type GetPublicVenue200 = {
   date: string;
   venue: PublicVenue;
   pitches: PitchAvailability[];
+  photos: Photo[];
 };
 
 export type GetPublicPitchParams = {
@@ -1771,6 +1799,7 @@ export type GetPublicPitch200 = {
   date: string;
   pitch: PublicPitchSummary;
   startTimes: StartTime[];
+  photos: Photo[];
 };
 
 export type GetWeeklyAvailabilityParams = {
@@ -3995,6 +4024,269 @@ export const removeClosure = async (organizationId: string,
 
 
 
+export type listFacilityPhotosResponse200 = {
+  data: ListFacilityPhotos200
+  status: 200
+}
+
+export type listFacilityPhotosResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listFacilityPhotosResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listFacilityPhotosResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type listFacilityPhotosResponseSuccess = (listFacilityPhotosResponse200) & {
+  headers: Headers;
+};
+export type listFacilityPhotosResponseError = (listFacilityPhotosResponse401 | listFacilityPhotosResponse403 | listFacilityPhotosResponse404) & {
+  headers: Headers;
+};
+
+export type listFacilityPhotosResponse = (listFacilityPhotosResponseSuccess | listFacilityPhotosResponseError)
+
+export const getListFacilityPhotosUrl = (organizationId: string,
+    facilityId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/facilities/${facilityId}/photos`
+}
+
+/**
+ * Requires an owner or staff member of the organization.
+ * @summary The venue's photos, cover first
+ */
+export const listFacilityPhotos = async (organizationId: string,
+    facilityId: string, options?: Parameters<typeof appFetch>[1]): Promise<listFacilityPhotosResponse> => {
+
+  return appFetch<listFacilityPhotosResponse>(getListFacilityPhotosUrl(organizationId,facilityId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type addFacilityPhotoResponse201 = {
+  data: AddFacilityPhoto201
+  status: 201
+}
+
+export type addFacilityPhotoResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type addFacilityPhotoResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type addFacilityPhotoResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type addFacilityPhotoResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type addFacilityPhotoResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type addFacilityPhotoResponse413 = {
+  data: ErrorBody
+  status: 413
+}
+
+export type addFacilityPhotoResponse415 = {
+  data: ErrorBody
+  status: 415
+}
+
+export type addFacilityPhotoResponseSuccess = (addFacilityPhotoResponse201) & {
+  headers: Headers;
+};
+export type addFacilityPhotoResponseError = (addFacilityPhotoResponse400 | addFacilityPhotoResponse401 | addFacilityPhotoResponse403 | addFacilityPhotoResponse404 | addFacilityPhotoResponse409 | addFacilityPhotoResponse413 | addFacilityPhotoResponse415) & {
+  headers: Headers;
+};
+
+export type addFacilityPhotoResponse = (addFacilityPhotoResponseSuccess | addFacilityPhotoResponseError)
+
+export const getAddFacilityPhotoUrl = (organizationId: string,
+    facilityId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/facilities/${facilityId}/photos`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Add a photo: the body is the image itself (JPEG, PNG, WebP or HEIC, up to 8 MB, at least 400 px on the short side). It is re-encoded without metadata into two WebP sizes. 409 at the venue's photo limit (3)
+ */
+export const addFacilityPhoto = async (organizationId: string,
+    facilityId: string,
+    addFacilityPhotoBody: Blob, options?: Parameters<typeof appFetch>[1]): Promise<addFacilityPhotoResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<addFacilityPhotoResponse>(getAddFacilityPhotoUrl(organizationId,facilityId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg', ...getHeaders(options?.headers) },
+    body: addFacilityPhotoBody
+  }
+);}
+
+
+
+export type removeFacilityPhotoResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type removeFacilityPhotoResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type removeFacilityPhotoResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type removeFacilityPhotoResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type removeFacilityPhotoResponseSuccess = (removeFacilityPhotoResponse200) & {
+  headers: Headers;
+};
+export type removeFacilityPhotoResponseError = (removeFacilityPhotoResponse401 | removeFacilityPhotoResponse403 | removeFacilityPhotoResponse404) & {
+  headers: Headers;
+};
+
+export type removeFacilityPhotoResponse = (removeFacilityPhotoResponseSuccess | removeFacilityPhotoResponseError)
+
+export const getRemoveFacilityPhotoUrl = (organizationId: string,
+    facilityId: string,
+    photoId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/facilities/${facilityId}/photos/${photoId}`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Remove a photo
+ */
+export const removeFacilityPhoto = async (organizationId: string,
+    facilityId: string,
+    photoId: string, options?: Parameters<typeof appFetch>[1]): Promise<removeFacilityPhotoResponse> => {
+
+  return appFetch<removeFacilityPhotoResponse>(getRemoveFacilityPhotoUrl(organizationId,facilityId,photoId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type setCoverPhotoResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type setCoverPhotoResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type setCoverPhotoResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type setCoverPhotoResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type setCoverPhotoResponseSuccess = (setCoverPhotoResponse200) & {
+  headers: Headers;
+};
+export type setCoverPhotoResponseError = (setCoverPhotoResponse401 | setCoverPhotoResponse403 | setCoverPhotoResponse404) & {
+  headers: Headers;
+};
+
+export type setCoverPhotoResponse = (setCoverPhotoResponseSuccess | setCoverPhotoResponseError)
+
+export const getSetCoverPhotoUrl = (organizationId: string,
+    facilityId: string,
+    photoId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/facilities/${facilityId}/photos/${photoId}/cover`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Make a photo the cover, shown on search cards
+ */
+export const setCoverPhoto = async (organizationId: string,
+    facilityId: string,
+    photoId: string, options?: Parameters<typeof appFetch>[1]): Promise<setCoverPhotoResponse> => {
+
+  return appFetch<setCoverPhotoResponse>(getSetCoverPhotoUrl(organizationId,facilityId,photoId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
 export type listMembersResponse200 = {
   data: ListMembers200
   status: 200
@@ -4385,6 +4677,52 @@ export const getSearchVenuesUrl = (params?: SearchVenuesParams,) => {
 export const searchVenues = async (params?: SearchVenuesParams, options?: Parameters<typeof appFetch>[1]): Promise<searchVenuesResponse> => {
 
   return appFetch<searchVenuesResponse>(getSearchVenuesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getPhotoFileResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type getPhotoFileResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getPhotoFileResponseSuccess = (getPhotoFileResponse200) & {
+  headers: Headers;
+};
+export type getPhotoFileResponseError = (getPhotoFileResponse404) & {
+  headers: Headers;
+};
+
+export type getPhotoFileResponse = (getPhotoFileResponseSuccess | getPhotoFileResponseError)
+
+export const getGetPhotoFileUrl = (facilityId: string,
+    file: string,) => {
+
+
+
+
+  return `/v1/public/photos/facilities/${facilityId}/${file}`
+}
+
+/**
+ * No sign-in required.
+ * @summary A venue photo file (development storage only; with a bucket, photo URLs point at the bucket)
+ */
+export const getPhotoFile = async (facilityId: string,
+    file: string, options?: Parameters<typeof appFetch>[1]): Promise<getPhotoFileResponse> => {
+
+  return appFetch<getPhotoFileResponse>(getGetPhotoFileUrl(facilityId,file),
   {
     ...options,
     method: 'GET'

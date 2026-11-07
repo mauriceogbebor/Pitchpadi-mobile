@@ -200,6 +200,22 @@ function ManageVenueScreen() {
                   />
                 </View>
               )}
+              <Button
+                variant="outline"
+                icon="image-outline"
+                label="Photos"
+                accessibilityLabel={`Photos of ${facility.facility_name}`}
+                onPress={() =>
+                  router.push({
+                    pathname: "/venue/photos",
+                    params: {
+                      organizationId,
+                      facilityId: facility.facility_id,
+                      facilityName: facility.facility_name,
+                    },
+                  })
+                }
+              />
               {pitches.map((pitch) => (
                 <View key={pitch.pitch_id} style={{ gap: space.xs }}>
                   <PitchRow

@@ -24,6 +24,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { AmenitiesSummary } from "@/components/amenities-summary";
+import { VenuePhoto } from "@/components/venue-photo";
 import {
   addDays,
   dateParts,
@@ -89,6 +90,7 @@ export default function PitchScreen() {
 
   const days = useMemo(() => nextDates(today, 14), [today]);
   const info = pitch.data?.pitch;
+  const cover = pitch.data?.photos[0] ?? null;
 
   const slot = useHoldSlot(() => void pitch.refetch());
   const holding = slot.holding;
@@ -184,6 +186,17 @@ export default function PitchScreen() {
                   />
                 </View>
               </PitchBand>
+              {cover ? (
+                <VenuePhoto
+                  photo={cover}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    aspectRatio: 16 / 9,
+                    borderRadius: radius.lg,
+                  }}
+                />
+              ) : null}
 
               <Section title="Pick a time">
                 <DateStrip

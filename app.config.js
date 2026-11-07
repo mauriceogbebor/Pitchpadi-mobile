@@ -34,6 +34,16 @@ module.exports = ({ config }) => {
             "PitchPadi uses your location to show pitches near you and, for venue owners, to pin the venue on the map.",
         },
       ],
+      [
+        "expo-image-picker",
+        {
+          photosPermission:
+            "PitchPadi uses the photos you choose to show players your venue.",
+          // Venue photos come from the library only: no camera or microphone.
+          cameraPermission: false,
+          microphonePermission: false,
+        },
+      ],
     ],
     extra: {
       ...config.extra,
