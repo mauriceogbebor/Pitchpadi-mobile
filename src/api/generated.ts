@@ -917,6 +917,218 @@ export interface TestPayment {
   localStart: string;
 }
 
+export type AdminMeUser = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  phone: string;
+};
+
+export type AdminMeMfa = {
+  enrolled: boolean;
+  verified: boolean;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  stepUpUntil: string | null;
+};
+
+export type AdminRole = typeof AdminRole[keyof typeof AdminRole];
+
+
+export const AdminRole = {
+  support: 'support',
+  finance: 'finance',
+  moderator: 'moderator',
+  admin: 'admin',
+  viewer: 'viewer',
+} as const;
+
+export interface AdminMe {
+  user: AdminMeUser;
+  roles: AdminRole[];
+  permissions: string[];
+  mfa: AdminMeMfa;
+}
+
+export interface AdminBooking {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  reference: string;
+  status: string;
+  source: string;
+  venueName: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  organizationId: string;
+  pitchName: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  /** @nullable */
+  customerName: string | null;
+  /** @nullable */
+  customerPhone: string | null;
+}
+
+export type AdminBookingDetailBooking = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  reference: string;
+  status: string;
+  source: string;
+  venueName: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  organizationId: string;
+  pitchName: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  /** @nullable */
+  customerName: string | null;
+  /** @nullable */
+  customerPhone: string | null;
+  /** @nullable */
+  releaseReason: string | null;
+};
+
+export type AdminBookingDetailPaymentsItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  method: string;
+  status: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  providerReference: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+};
+
+export type AdminBookingDetailLedgerItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  type: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  /** @nullable */
+  note: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+};
+
+export type AdminBookingDetailHistoryItem = {
+  action: string;
+  actorType: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+};
+
+export interface AdminBookingDetail {
+  booking: AdminBookingDetailBooking;
+  payments: AdminBookingDetailPaymentsItem[];
+  ledger: AdminBookingDetailLedgerItem[];
+  history: AdminBookingDetailHistoryItem[];
+}
+
+/**
+ * @nullable
+ */
+export type RefundPaid = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  reference: string;
+  /** @nullable */
+  by: string | null;
+} | null;
+
+export interface Refund {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  amountMinor: number;
+  currency: string;
+  /** @nullable */
+  note: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  dueAt: string;
+  reference: string;
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  reservationId: string;
+  venueName: string;
+  method: string;
+  /** @nullable */
+  customerName: string | null;
+  /** @nullable */
+  customerPhone: string | null;
+  /** @nullable */
+  paid: RefundPaid;
+}
+
+/**
+ * @nullable
+ */
+export type VenueForReviewSuspended = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  /** @nullable */
+  reason: string | null;
+} | null;
+
+export type VenueForReviewFacilitiesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  areaName: string;
+  address: string;
+  /** @nullable */
+  landmark: string | null;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  pitchCount: number;
+};
+
+export interface VenueForReview {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  status: VenueStatus;
+  /** @nullable */
+  reviewNote: string | null;
+  /**
+     * @nullable
+     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+     */
+  reviewedAt: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  createdAt: string;
+  /** @nullable */
+  suspended: VenueForReviewSuspended;
+  ownerPhones: string[];
+  facilities: VenueForReviewFacilitiesItem[];
+}
+
 export type AuditEventActorType = typeof AuditEventActorType[keyof typeof AuditEventActorType];
 
 
@@ -951,37 +1163,46 @@ export interface AuditEvent {
   details: AuditEventDetails;
 }
 
-export type VenueForReviewFacilitiesItem = {
+/**
+ * @nullable
+ */
+export type AdminUserBlocked = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  at: string;
+  /** @nullable */
+  reason: string | null;
+} | null;
+
+export type AdminUserVenuesItem = {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
   name: string;
-  areaName: string;
-  address: string;
+  role: string;
+};
+
+export interface AdminUser {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  phone: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  joinedAt: string;
   /** @nullable */
-  landmark: string | null;
+  blocked: AdminUserBlocked;
+  venues: AdminUserVenuesItem[];
+  teamRoles: string[];
   /**
      * @minimum -9007199254740991
      * @maximum 9007199254740991
      */
-  pitchCount: number;
-};
+  activeSessions: number;
+}
 
-export interface VenueForReview {
+export interface TeamMember {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  id: string;
-  name: string;
-  status: VenueStatus;
-  /** @nullable */
-  reviewNote: string | null;
-  /**
-     * @nullable
-     * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
-     */
-  reviewedAt: string | null;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
-  createdAt: string;
-  ownerPhones: string[];
-  facilities: VenueForReviewFacilitiesItem[];
+  userId: string;
+  phone: string;
+  roles: AdminRole[];
+  authenticatorSetUp: boolean;
 }
 
 export type ErrorBodyFieldErrors = {[key: string]: string[]};
@@ -1056,6 +1277,7 @@ export type VerifySignInCodeBodyClient = typeof VerifySignInCodeBodyClient[keyof
 export const VerifySignInCodeBodyClient = {
   web: 'web',
   app: 'app',
+  admin: 'admin',
 } as const;
 
 export type VerifySignInCodeBody = {
@@ -1900,22 +2122,75 @@ export type SimulateTestPayment200 = {
   holdId: string;
 };
 
-export type GetAdminAuditEventsParams = {
-  /**
-   * @minLength 10
-   * @maxLength 300
-   */
-  reason: string;
-  reference?: string;
-  /**
-   * @minimum 1
-   * @maximum 500
-   */
-  limit?: number;
+export type StartAdminMfa200 = {
+  secret: string;
+  uri: string;
 };
 
-export type GetAdminAuditEvents200 = {
-  events: AuditEvent[];
+export type ConfirmAdminMfaBody = {
+  /** @pattern ^\d{6}$ */
+  code: string;
+};
+
+export type VerifyAdminMfaBody = {
+  /** @pattern ^\d{6}$ */
+  code: string;
+};
+
+export type SearchAdminBookingsParams = {
+  q: string;
+};
+
+export type SearchAdminBookings200 = {
+  bookings: AdminBooking[];
+};
+
+export type CancelBookingOnBehalfBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type CancelBookingOnBehalf200Status = typeof CancelBookingOnBehalf200Status[keyof typeof CancelBookingOnBehalf200Status];
+
+
+export const CancelBookingOnBehalf200Status = {
+  cancelled: 'cancelled',
+} as const;
+
+export type CancelBookingOnBehalf200 = {
+  status: CancelBookingOnBehalf200Status;
+  /**
+     * @minimum -9007199254740991
+     * @maximum 9007199254740991
+     */
+  refundDueMinor: number;
+};
+
+export type ListRefundsParams = {
+  status?: ListRefundsStatus;
+};
+
+export type ListRefundsStatus = typeof ListRefundsStatus[keyof typeof ListRefundsStatus];
+
+
+export const ListRefundsStatus = {
+  due: 'due',
+  paid: 'paid',
+} as const;
+
+export type ListRefunds200 = {
+  refunds: Refund[];
+};
+
+export type MarkRefundPaidBody = {
+  /**
+     * @minLength 3
+     * @maxLength 120
+     */
+  paymentReference: string;
 };
 
 export type ListVenuesForReviewParams = {
@@ -1924,6 +2199,17 @@ export type ListVenuesForReviewParams = {
 
 export type ListVenuesForReview200 = {
   venues: VenueForReview[];
+};
+
+export type GetAdminVenuePhotos200FacilitiesItem = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  name: string;
+  photos: Photo[];
+};
+
+export type GetAdminVenuePhotos200 = {
+  facilities: GetAdminVenuePhotos200FacilitiesItem[];
 };
 
 export type ReviewVenueBody = {
@@ -1949,6 +2235,97 @@ export const ReviewVenue200Status = {
 
 export type ReviewVenue200 = {
   status: ReviewVenue200Status;
+};
+
+export type SuspendVenueBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type RestoreVenueBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type RemovePhotoAsAdminBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type GetAdminAuditEventsParams = {
+  /**
+   * @minLength 10
+   * @maxLength 300
+   */
+  reason: string;
+  reference?: string;
+  /**
+   * @minimum 1
+   * @maximum 500
+   */
+  limit?: number;
+};
+
+export type GetAdminAuditEvents200 = {
+  events: AuditEvent[];
+};
+
+export type FindAdminUserParams = {
+  phone: string;
+};
+
+export type FindAdminUser200 = {
+  user: AdminUser | null;
+};
+
+export type BlockUserBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type UnblockUserBody = {
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  reason: string;
+};
+
+export type ListTeam200 = {
+  team: TeamMember[];
+};
+
+export type GrantTeamRoleBodyRole = typeof GrantTeamRoleBodyRole[keyof typeof GrantTeamRoleBodyRole];
+
+
+export const GrantTeamRoleBodyRole = {
+  support: 'support',
+  finance: 'finance',
+  moderator: 'moderator',
+  admin: 'admin',
+  viewer: 'viewer',
+} as const;
+
+export type GrantTeamRoleBody = {
+  phone: string;
+  role: GrantTeamRoleBodyRole;
+};
+
+export type GrantTeamRole201 = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  userId: string;
 };
 
 export type GetOpenApi200 = {[key: string]: unknown};
@@ -2119,7 +2496,7 @@ export const getVerifySignInCodeUrl = () => {
 
 /**
  * No sign-in required.
- * @summary Check the code and sign in, creating the account on first use. Starts a fresh session (any previous one in this browser or app ends). The website gets a cookie; the app (client: app) gets a bearer token in the body
+ * @summary Check the code and sign in, creating the account on first use. Starts a fresh session (any previous one in this browser or app ends). The website gets a cookie; the app (client: app) gets a bearer token in the body; PitchPadi Admin (client: admin, team members only) gets a 12-hour admin cookie. 403 for a blocked account, or a number not on the team when client is admin
  */
 export const verifySignInCode = async (verifySignInCodeBody: VerifySignInCodeBody, options?: Parameters<typeof appFetch>[1]): Promise<verifySignInCodeResponse> => {
 
@@ -5442,42 +5819,339 @@ return appFetch<simulateTestPaymentResponse>(getSimulateTestPaymentUrl(attemptId
 
 
 
-export type getAdminAuditEventsResponse200 = {
-  data: GetAdminAuditEvents200
+export type getAdminMeResponse200 = {
+  data: AdminMe
   status: 200
 }
 
-export type getAdminAuditEventsResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type getAdminAuditEventsResponse401 = {
+export type getAdminMeResponse401 = {
   data: ErrorBody
   status: 401
 }
 
-export type getAdminAuditEventsResponse403 = {
+export type getAdminMeResponse403 = {
   data: ErrorBody
   status: 403
 }
 
-export type getAdminAuditEventsResponse404 = {
-  data: ErrorBody
-  status: 404
+export type getAdminMeResponseSuccess = (getAdminMeResponse200) & {
+  headers: Headers;
+};
+export type getAdminMeResponseError = (getAdminMeResponse401 | getAdminMeResponse403) & {
+  headers: Headers;
+};
+
+export type getAdminMeResponse = (getAdminMeResponseSuccess | getAdminMeResponseError)
+
+export const getGetAdminMeUrl = () => {
+
+
+
+
+  return `/v1/admin/me`
 }
 
-export type getAdminAuditEventsResponseSuccess = (getAdminAuditEventsResponse200) & {
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked.
+ * @summary Who is signed in to PitchPadi Admin: roles, permissions and what sign-in still needs (authenticator set-up or code)
+ */
+export const getAdminMe = async ( options?: Parameters<typeof appFetch>[1]): Promise<getAdminMeResponse> => {
+
+  return appFetch<getAdminMeResponse>(getGetAdminMeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type startAdminMfaResponse200 = {
+  data: StartAdminMfa200
+  status: 200
+}
+
+export type startAdminMfaResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type startAdminMfaResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type startAdminMfaResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type startAdminMfaResponseSuccess = (startAdminMfaResponse200) & {
   headers: Headers;
 };
-export type getAdminAuditEventsResponseError = (getAdminAuditEventsResponse400 | getAdminAuditEventsResponse401 | getAdminAuditEventsResponse403 | getAdminAuditEventsResponse404) & {
+export type startAdminMfaResponseError = (startAdminMfaResponse401 | startAdminMfaResponse403 | startAdminMfaResponse409) & {
   headers: Headers;
 };
 
-export type getAdminAuditEventsResponse = (getAdminAuditEventsResponseSuccess | getAdminAuditEventsResponseError)
+export type startAdminMfaResponse = (startAdminMfaResponseSuccess | startAdminMfaResponseError)
 
-export const getGetAdminAuditEventsUrl = (organizationId: string,
-    params: GetAdminAuditEventsParams,) => {
+export const getStartAdminMfaUrl = () => {
+
+
+
+
+  return `/v1/admin/mfa/setup`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked.
+ * @summary Start setting up an authenticator app: returns the secret and an otpauth:// link to scan. 409 once one is set up
+ */
+export const startAdminMfa = async ( options?: Parameters<typeof appFetch>[1]): Promise<startAdminMfaResponse> => {
+
+  return appFetch<startAdminMfaResponse>(getStartAdminMfaUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type confirmAdminMfaResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type confirmAdminMfaResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type confirmAdminMfaResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type confirmAdminMfaResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type confirmAdminMfaResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type confirmAdminMfaResponse429 = {
+  data: ErrorBody
+  status: 429
+}
+
+export type confirmAdminMfaResponseSuccess = (confirmAdminMfaResponse200) & {
+  headers: Headers;
+};
+export type confirmAdminMfaResponseError = (confirmAdminMfaResponse400 | confirmAdminMfaResponse401 | confirmAdminMfaResponse403 | confirmAdminMfaResponse409 | confirmAdminMfaResponse429) & {
+  headers: Headers;
+};
+
+export type confirmAdminMfaResponse = (confirmAdminMfaResponseSuccess | confirmAdminMfaResponseError)
+
+export const getConfirmAdminMfaUrl = () => {
+
+
+
+
+  return `/v1/admin/mfa/confirm`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked.
+ * @summary Finish authenticator set-up with its first code; the session counts as verified
+ */
+export const confirmAdminMfa = async (confirmAdminMfaBody: ConfirmAdminMfaBody, options?: Parameters<typeof appFetch>[1]): Promise<confirmAdminMfaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<confirmAdminMfaResponse>(getConfirmAdminMfaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(confirmAdminMfaBody)
+  }
+);}
+
+
+
+export type verifyAdminMfaResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type verifyAdminMfaResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type verifyAdminMfaResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type verifyAdminMfaResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type verifyAdminMfaResponse429 = {
+  data: ErrorBody
+  status: 429
+}
+
+export type verifyAdminMfaResponseSuccess = (verifyAdminMfaResponse200) & {
+  headers: Headers;
+};
+export type verifyAdminMfaResponseError = (verifyAdminMfaResponse400 | verifyAdminMfaResponse401 | verifyAdminMfaResponse403 | verifyAdminMfaResponse429) & {
+  headers: Headers;
+};
+
+export type verifyAdminMfaResponse = (verifyAdminMfaResponseSuccess | verifyAdminMfaResponseError)
+
+export const getVerifyAdminMfaUrl = () => {
+
+
+
+
+  return `/v1/admin/mfa/verify`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked.
+ * @summary Enter an authenticator code: at sign-in, and again before step-up actions. 429 after 5 wrong codes (15 minutes)
+ */
+export const verifyAdminMfa = async (verifyAdminMfaBody: VerifyAdminMfaBody, options?: Parameters<typeof appFetch>[1]): Promise<verifyAdminMfaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<verifyAdminMfaResponse>(getVerifyAdminMfaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(verifyAdminMfaBody)
+  }
+);}
+
+
+
+export type adminLogoutResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type adminLogoutResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type adminLogoutResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type adminLogoutResponseSuccess = (adminLogoutResponse200) & {
+  headers: Headers;
+};
+export type adminLogoutResponseError = (adminLogoutResponse401 | adminLogoutResponse403) & {
+  headers: Headers;
+};
+
+export type adminLogoutResponse = (adminLogoutResponseSuccess | adminLogoutResponseError)
+
+export const getAdminLogoutUrl = () => {
+
+
+
+
+  return `/v1/admin/logout`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked.
+ * @summary Sign out of PitchPadi Admin
+ */
+export const adminLogout = async ( options?: Parameters<typeof appFetch>[1]): Promise<adminLogoutResponse> => {
+
+  return appFetch<adminLogoutResponse>(getAdminLogoutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type searchAdminBookingsResponse200 = {
+  data: SearchAdminBookings200
+  status: 200
+}
+
+export type searchAdminBookingsResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type searchAdminBookingsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type searchAdminBookingsResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type searchAdminBookingsResponseSuccess = (searchAdminBookingsResponse200) & {
+  headers: Headers;
+};
+export type searchAdminBookingsResponseError = (searchAdminBookingsResponse400 | searchAdminBookingsResponse401 | searchAdminBookingsResponse403) & {
+  headers: Headers;
+};
+
+export type searchAdminBookingsResponse = (searchAdminBookingsResponseSuccess | searchAdminBookingsResponseError)
+
+export const getSearchAdminBookingsUrl = (params: SearchAdminBookingsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -5489,22 +6163,294 @@ export const getGetAdminAuditEventsUrl = (organizationId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/admin/organizations/${organizationId}/audit-events?${stringifiedParams}` : `/v1/admin/organizations/${organizationId}/audit-events`
+  return stringifiedParams.length > 0 ? `/v1/admin/bookings?${stringifiedParams}` : `/v1/admin/bookings`
 }
 
 /**
- * Requires a platform admin. Each call is audited.
- * @summary An organization's audit trail, newest first, optionally for one booking reference. The read itself is audited with the admin and the stated reason
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: bookings.read.
+ * @summary Find bookings and holds by reference (PP-…) or the player's phone number. The search is audited, without the phone number
  */
-export const getAdminAuditEvents = async (organizationId: string,
-    params: GetAdminAuditEventsParams, options?: Parameters<typeof appFetch>[1]): Promise<getAdminAuditEventsResponse> => {
+export const searchAdminBookings = async (params: SearchAdminBookingsParams, options?: Parameters<typeof appFetch>[1]): Promise<searchAdminBookingsResponse> => {
 
-  return appFetch<getAdminAuditEventsResponse>(getGetAdminAuditEventsUrl(organizationId,params),
+  return appFetch<searchAdminBookingsResponse>(getSearchAdminBookingsUrl(params),
   {
     ...options,
     method: 'GET'
 
 
+  }
+);}
+
+
+
+export type getAdminBookingResponse200 = {
+  data: AdminBookingDetail
+  status: 200
+}
+
+export type getAdminBookingResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type getAdminBookingResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type getAdminBookingResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getAdminBookingResponseSuccess = (getAdminBookingResponse200) & {
+  headers: Headers;
+};
+export type getAdminBookingResponseError = (getAdminBookingResponse401 | getAdminBookingResponse403 | getAdminBookingResponse404) & {
+  headers: Headers;
+};
+
+export type getAdminBookingResponse = (getAdminBookingResponseSuccess | getAdminBookingResponseError)
+
+export const getGetAdminBookingUrl = (reservationId: string,) => {
+
+
+
+
+  return `/v1/admin/bookings/${reservationId}`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: bookings.read.
+ * @summary One booking: its payments, money owed and history. Audited
+ */
+export const getAdminBooking = async (reservationId: string, options?: Parameters<typeof appFetch>[1]): Promise<getAdminBookingResponse> => {
+
+  return appFetch<getAdminBookingResponse>(getGetAdminBookingUrl(reservationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type cancelBookingOnBehalfResponse200 = {
+  data: CancelBookingOnBehalf200
+  status: 200
+}
+
+export type cancelBookingOnBehalfResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type cancelBookingOnBehalfResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type cancelBookingOnBehalfResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type cancelBookingOnBehalfResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type cancelBookingOnBehalfResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type cancelBookingOnBehalfResponseSuccess = (cancelBookingOnBehalfResponse200) & {
+  headers: Headers;
+};
+export type cancelBookingOnBehalfResponseError = (cancelBookingOnBehalfResponse400 | cancelBookingOnBehalfResponse401 | cancelBookingOnBehalfResponse403 | cancelBookingOnBehalfResponse404 | cancelBookingOnBehalfResponse409) & {
+  headers: Headers;
+};
+
+export type cancelBookingOnBehalfResponse = (cancelBookingOnBehalfResponseSuccess | cancelBookingOnBehalfResponseError)
+
+export const getCancelBookingOnBehalfUrl = (reservationId: string,) => {
+
+
+
+
+  return `/v1/admin/bookings/${reservationId}/cancel`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: bookings.act. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Cancel a confirmed game before it starts, on someone's behalf, with a reason. The time is free at once; a game paid online is owed back in full (refund due)
+ */
+export const cancelBookingOnBehalf = async (reservationId: string,
+    cancelBookingOnBehalfBody: CancelBookingOnBehalfBody, options?: Parameters<typeof appFetch>[1]): Promise<cancelBookingOnBehalfResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<cancelBookingOnBehalfResponse>(getCancelBookingOnBehalfUrl(reservationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cancelBookingOnBehalfBody)
+  }
+);}
+
+
+
+export type listRefundsResponse200 = {
+  data: ListRefunds200
+  status: 200
+}
+
+export type listRefundsResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type listRefundsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listRefundsResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listRefundsResponseSuccess = (listRefundsResponse200) & {
+  headers: Headers;
+};
+export type listRefundsResponseError = (listRefundsResponse400 | listRefundsResponse401 | listRefundsResponse403) & {
+  headers: Headers;
+};
+
+export type listRefundsResponse = (listRefundsResponseSuccess | listRefundsResponseError)
+
+export const getListRefundsUrl = (params?: ListRefundsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/refunds?${stringifiedParams}` : `/v1/admin/refunds`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: refunds.read.
+ * @summary Refunds owed (due, oldest first) or already paid back (paid, newest first)
+ */
+export const listRefunds = async (params?: ListRefundsParams, options?: Parameters<typeof appFetch>[1]): Promise<listRefundsResponse> => {
+
+  return appFetch<listRefundsResponse>(getListRefundsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type markRefundPaidResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type markRefundPaidResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type markRefundPaidResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type markRefundPaidResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type markRefundPaidResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type markRefundPaidResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type markRefundPaidResponseSuccess = (markRefundPaidResponse200) & {
+  headers: Headers;
+};
+export type markRefundPaidResponseError = (markRefundPaidResponse400 | markRefundPaidResponse401 | markRefundPaidResponse403 | markRefundPaidResponse404 | markRefundPaidResponse409) & {
+  headers: Headers;
+};
+
+export type markRefundPaidResponse = (markRefundPaidResponseSuccess | markRefundPaidResponseError)
+
+export const getMarkRefundPaidUrl = (entryId: string,) => {
+
+
+
+
+  return `/v1/admin/refunds/${entryId}/paid`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: refunds.settle. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Record that a refund was paid back, with the Paystack or bank reference. A new ledger entry; the ledger is never edited
+ */
+export const markRefundPaid = async (entryId: string,
+    markRefundPaidBody: MarkRefundPaidBody, options?: Parameters<typeof appFetch>[1]): Promise<markRefundPaidResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<markRefundPaidResponse>(getMarkRefundPaidUrl(entryId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(markRefundPaidBody)
   }
 );}
 
@@ -5555,12 +6501,66 @@ export const getListVenuesForReviewUrl = (params?: ListVenuesForReviewParams,) =
 }
 
 /**
- * Requires a platform admin. Each call is audited.
- * @summary Venues by review status (default pending, oldest first). Business details and owner phones only
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.read.
+ * @summary Venues by review status (default pending, oldest first), with whether the team has hidden them
  */
 export const listVenuesForReview = async (params?: ListVenuesForReviewParams, options?: Parameters<typeof appFetch>[1]): Promise<listVenuesForReviewResponse> => {
 
   return appFetch<listVenuesForReviewResponse>(getListVenuesForReviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getAdminVenuePhotosResponse200 = {
+  data: GetAdminVenuePhotos200
+  status: 200
+}
+
+export type getAdminVenuePhotosResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type getAdminVenuePhotosResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type getAdminVenuePhotosResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getAdminVenuePhotosResponseSuccess = (getAdminVenuePhotosResponse200) & {
+  headers: Headers;
+};
+export type getAdminVenuePhotosResponseError = (getAdminVenuePhotosResponse401 | getAdminVenuePhotosResponse403 | getAdminVenuePhotosResponse404) & {
+  headers: Headers;
+};
+
+export type getAdminVenuePhotosResponse = (getAdminVenuePhotosResponseSuccess | getAdminVenuePhotosResponseError)
+
+export const getGetAdminVenuePhotosUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/admin/organizations/${organizationId}/photos`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.read.
+ * @summary A venue's photos by facility, for moderation
+ */
+export const getAdminVenuePhotos = async (organizationId: string, options?: Parameters<typeof appFetch>[1]): Promise<getAdminVenuePhotosResponse> => {
+
+  return appFetch<getAdminVenuePhotosResponse>(getGetAdminVenuePhotosUrl(organizationId),
   {
     ...options,
     method: 'GET'
@@ -5619,8 +6619,8 @@ export const getReviewVenueUrl = (organizationId: string,) => {
 }
 
 /**
- * Requires a platform admin. Each call is audited.
- * @summary Approve or reject a pending venue. Rejection needs a note for the owner. Audited as the admin
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.review.
+ * @summary Approve or send back a pending venue. Sending back needs a note for the owner
  */
 export const reviewVenue = async (organizationId: string,
     reviewVenueBody: ReviewVenueBody, options?: Parameters<typeof appFetch>[1]): Promise<reviewVenueResponse> => {
@@ -5645,6 +6645,708 @@ return appFetch<reviewVenueResponse>(getReviewVenueUrl(organizationId),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(reviewVenueBody)
+  }
+);}
+
+
+
+export type suspendVenueResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type suspendVenueResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type suspendVenueResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type suspendVenueResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type suspendVenueResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type suspendVenueResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type suspendVenueResponseSuccess = (suspendVenueResponse200) & {
+  headers: Headers;
+};
+export type suspendVenueResponseError = (suspendVenueResponse400 | suspendVenueResponse401 | suspendVenueResponse403 | suspendVenueResponse404 | suspendVenueResponse409) & {
+  headers: Headers;
+};
+
+export type suspendVenueResponse = (suspendVenueResponseSuccess | suspendVenueResponseError)
+
+export const getSuspendVenueUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/admin/organizations/${organizationId}/suspend`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.suspend. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Hide a venue from players, with a reason. Games already booked stand
+ */
+export const suspendVenue = async (organizationId: string,
+    suspendVenueBody: SuspendVenueBody, options?: Parameters<typeof appFetch>[1]): Promise<suspendVenueResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<suspendVenueResponse>(getSuspendVenueUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(suspendVenueBody)
+  }
+);}
+
+
+
+export type restoreVenueResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type restoreVenueResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type restoreVenueResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type restoreVenueResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type restoreVenueResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type restoreVenueResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type restoreVenueResponseSuccess = (restoreVenueResponse200) & {
+  headers: Headers;
+};
+export type restoreVenueResponseError = (restoreVenueResponse400 | restoreVenueResponse401 | restoreVenueResponse403 | restoreVenueResponse404 | restoreVenueResponse409) & {
+  headers: Headers;
+};
+
+export type restoreVenueResponse = (restoreVenueResponseSuccess | restoreVenueResponseError)
+
+export const getRestoreVenueUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/admin/organizations/${organizationId}/restore`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: venues.suspend. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Show a hidden venue to players again, with a reason
+ */
+export const restoreVenue = async (organizationId: string,
+    restoreVenueBody: RestoreVenueBody, options?: Parameters<typeof appFetch>[1]): Promise<restoreVenueResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<restoreVenueResponse>(getRestoreVenueUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(restoreVenueBody)
+  }
+);}
+
+
+
+export type removePhotoAsAdminResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type removePhotoAsAdminResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type removePhotoAsAdminResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type removePhotoAsAdminResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type removePhotoAsAdminResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type removePhotoAsAdminResponseSuccess = (removePhotoAsAdminResponse200) & {
+  headers: Headers;
+};
+export type removePhotoAsAdminResponseError = (removePhotoAsAdminResponse400 | removePhotoAsAdminResponse401 | removePhotoAsAdminResponse403 | removePhotoAsAdminResponse404) & {
+  headers: Headers;
+};
+
+export type removePhotoAsAdminResponse = (removePhotoAsAdminResponseSuccess | removePhotoAsAdminResponseError)
+
+export const getRemovePhotoAsAdminUrl = (photoId: string,) => {
+
+
+
+
+  return `/v1/admin/photos/${photoId}/remove`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: photos.remove.
+ * @summary Remove a venue photo, with a reason
+ */
+export const removePhotoAsAdmin = async (photoId: string,
+    removePhotoAsAdminBody: RemovePhotoAsAdminBody, options?: Parameters<typeof appFetch>[1]): Promise<removePhotoAsAdminResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<removePhotoAsAdminResponse>(getRemovePhotoAsAdminUrl(photoId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(removePhotoAsAdminBody)
+  }
+);}
+
+
+
+export type getAdminAuditEventsResponse200 = {
+  data: GetAdminAuditEvents200
+  status: 200
+}
+
+export type getAdminAuditEventsResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type getAdminAuditEventsResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type getAdminAuditEventsResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type getAdminAuditEventsResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type getAdminAuditEventsResponseSuccess = (getAdminAuditEventsResponse200) & {
+  headers: Headers;
+};
+export type getAdminAuditEventsResponseError = (getAdminAuditEventsResponse400 | getAdminAuditEventsResponse401 | getAdminAuditEventsResponse403 | getAdminAuditEventsResponse404) & {
+  headers: Headers;
+};
+
+export type getAdminAuditEventsResponse = (getAdminAuditEventsResponseSuccess | getAdminAuditEventsResponseError)
+
+export const getGetAdminAuditEventsUrl = (organizationId: string,
+    params: GetAdminAuditEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/organizations/${organizationId}/audit-events?${stringifiedParams}` : `/v1/admin/organizations/${organizationId}/audit-events`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: audit.read.
+ * @summary A venue's audit trail, newest first, optionally for one booking reference. The read itself is audited with the stated reason
+ */
+export const getAdminAuditEvents = async (organizationId: string,
+    params: GetAdminAuditEventsParams, options?: Parameters<typeof appFetch>[1]): Promise<getAdminAuditEventsResponse> => {
+
+  return appFetch<getAdminAuditEventsResponse>(getGetAdminAuditEventsUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type findAdminUserResponse200 = {
+  data: FindAdminUser200
+  status: 200
+}
+
+export type findAdminUserResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type findAdminUserResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type findAdminUserResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type findAdminUserResponseSuccess = (findAdminUserResponse200) & {
+  headers: Headers;
+};
+export type findAdminUserResponseError = (findAdminUserResponse400 | findAdminUserResponse401 | findAdminUserResponse403) & {
+  headers: Headers;
+};
+
+export type findAdminUserResponse = (findAdminUserResponseSuccess | findAdminUserResponseError)
+
+export const getFindAdminUserUrl = (params: FindAdminUserParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/users?${stringifiedParams}` : `/v1/admin/users`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: users.read.
+ * @summary Find a person by phone number: their venues, team roles and whether they are blocked. Audited, without the phone number
+ */
+export const findAdminUser = async (params: FindAdminUserParams, options?: Parameters<typeof appFetch>[1]): Promise<findAdminUserResponse> => {
+
+  return appFetch<findAdminUserResponse>(getFindAdminUserUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type blockUserResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type blockUserResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type blockUserResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type blockUserResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type blockUserResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type blockUserResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type blockUserResponseSuccess = (blockUserResponse200) & {
+  headers: Headers;
+};
+export type blockUserResponseError = (blockUserResponse400 | blockUserResponse401 | blockUserResponse403 | blockUserResponse404 | blockUserResponse409) & {
+  headers: Headers;
+};
+
+export type blockUserResponse = (blockUserResponseSuccess | blockUserResponseError)
+
+export const getBlockUserUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/block`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: users.block. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Block an account, with a reason: every session ends and sign-in is refused. Team members cannot be blocked
+ */
+export const blockUser = async (userId: string,
+    blockUserBody: BlockUserBody, options?: Parameters<typeof appFetch>[1]): Promise<blockUserResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<blockUserResponse>(getBlockUserUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(blockUserBody)
+  }
+);}
+
+
+
+export type unblockUserResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type unblockUserResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type unblockUserResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type unblockUserResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type unblockUserResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type unblockUserResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type unblockUserResponseSuccess = (unblockUserResponse200) & {
+  headers: Headers;
+};
+export type unblockUserResponseError = (unblockUserResponse400 | unblockUserResponse401 | unblockUserResponse403 | unblockUserResponse404 | unblockUserResponse409) & {
+  headers: Headers;
+};
+
+export type unblockUserResponse = (unblockUserResponseSuccess | unblockUserResponseError)
+
+export const getUnblockUserUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/unblock`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: users.block. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Unblock an account, with a reason
+ */
+export const unblockUser = async (userId: string,
+    unblockUserBody: UnblockUserBody, options?: Parameters<typeof appFetch>[1]): Promise<unblockUserResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<unblockUserResponse>(getUnblockUserUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(unblockUserBody)
+  }
+);}
+
+
+
+export type listTeamResponse200 = {
+  data: ListTeam200
+  status: 200
+}
+
+export type listTeamResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listTeamResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listTeamResponseSuccess = (listTeamResponse200) & {
+  headers: Headers;
+};
+export type listTeamResponseError = (listTeamResponse401 | listTeamResponse403) & {
+  headers: Headers;
+};
+
+export type listTeamResponse = (listTeamResponseSuccess | listTeamResponseError)
+
+export const getListTeamUrl = () => {
+
+
+
+
+  return `/v1/admin/team`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: team.manage.
+ * @summary The PitchPadi team and their roles
+ */
+export const listTeam = async ( options?: Parameters<typeof appFetch>[1]): Promise<listTeamResponse> => {
+
+  return appFetch<listTeamResponse>(getListTeamUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type grantTeamRoleResponse201 = {
+  data: GrantTeamRole201
+  status: 201
+}
+
+export type grantTeamRoleResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type grantTeamRoleResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type grantTeamRoleResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type grantTeamRoleResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type grantTeamRoleResponseSuccess = (grantTeamRoleResponse201) & {
+  headers: Headers;
+};
+export type grantTeamRoleResponseError = (grantTeamRoleResponse400 | grantTeamRoleResponse401 | grantTeamRoleResponse403 | grantTeamRoleResponse409) & {
+  headers: Headers;
+};
+
+export type grantTeamRoleResponse = (grantTeamRoleResponseSuccess | grantTeamRoleResponseError)
+
+export const getGrantTeamRoleUrl = () => {
+
+
+
+
+  return `/v1/admin/team`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: team.manage. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Give a phone number a team role. They sign in to PitchPadi Admin with it and set up an authenticator
+ */
+export const grantTeamRole = async (grantTeamRoleBody: GrantTeamRoleBody, options?: Parameters<typeof appFetch>[1]): Promise<grantTeamRoleResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<grantTeamRoleResponse>(getGrantTeamRoleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(grantTeamRoleBody)
+  }
+);}
+
+
+
+export type revokeTeamRoleResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type revokeTeamRoleResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type revokeTeamRoleResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type revokeTeamRoleResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type revokeTeamRoleResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type revokeTeamRoleResponseSuccess = (revokeTeamRoleResponse200) & {
+  headers: Headers;
+};
+export type revokeTeamRoleResponseError = (revokeTeamRoleResponse401 | revokeTeamRoleResponse403 | revokeTeamRoleResponse404 | revokeTeamRoleResponse409) & {
+  headers: Headers;
+};
+
+export type revokeTeamRoleResponse = (revokeTeamRoleResponseSuccess | revokeTeamRoleResponseError)
+
+export const getRevokeTeamRoleUrl = (userId: string,
+    role: string,) => {
+
+
+
+
+  return `/v1/admin/team/${userId}/${role}`
+}
+
+/**
+ * PitchPadi Admin only (ADR-004): an admin-app session with its authenticator code checked. Permission: team.manage. Needs an authenticator code from the last 15 minutes (403 with code "step_up").
+ * @summary Take a team role away. The last admin cannot be removed; with no roles left, their admin sessions end
+ */
+export const revokeTeamRole = async (userId: string,
+    role: string, options?: Parameters<typeof appFetch>[1]): Promise<revokeTeamRoleResponse> => {
+
+  return appFetch<revokeTeamRoleResponse>(getRevokeTeamRoleUrl(userId,role),
+  {
+    ...options,
+    method: 'DELETE'
+
+
   }
 );}
 

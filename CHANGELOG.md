@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-07 — Venue review leaves the app (0.17.2, AD-01)
+
+- Account no longer shows "Review venues" for the PitchPadi team, and the review screen is removed. The team uses the separate PitchPadi Admin app (ADR-004).
+
 ## 2026-11-07 — Polish: lighter and more accessible (0.17.1, PL-01)
 
 - The app's download is about 2.6 MB lighter: only the six font weights the app uses are bundled (not all 25), and an unused 950 KB icon font is no longer included.

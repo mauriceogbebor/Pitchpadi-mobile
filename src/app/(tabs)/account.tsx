@@ -130,15 +130,6 @@ export default function AccountScreen() {
             detail="Add your pitch business so players can book it"
             onPress={() => router.push("/venue/setup")}
           />
-          {me.user.isPlatformAdmin && (
-            <Row
-              first={false}
-              icon="shield-checkmark-outline"
-              title="Review venues"
-              detail="PitchPadi team: approve new venues"
-              onPress={() => router.push("/admin/venues")}
-            />
-          )}
         </Card>
       </Section>
 

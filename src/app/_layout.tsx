@@ -173,10 +173,6 @@ export default function RootLayout() {
               options={{ title: "Hours and prices" }}
             />
             <Stack.Screen
-              name="admin/venues"
-              options={{ title: "Review venues" }}
-            />
-            <Stack.Screen
               name="venue/booking/[reservationId]"
               options={{ title: "Booking" }}
             />
