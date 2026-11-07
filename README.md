@@ -46,7 +46,7 @@ Without `EXPO_PUBLIC_API_URL`, the app uses the Mac running `expo start` on port
 
 `EXPO_PUBLIC_WEB_URL` is the website address used in shared team links (`/b/PP-…`). It defaults to `http://localhost:3000` until hosting is decided. When it is the live https address, `app.config.js` also turns on verified Android App Links and iOS Universal Links for `/b` and `/pitches`.
 
-**Push notifications** do not work in Expo Go (on Android since SDK 53): they need a development or store build, and `EAS_PROJECT_ID` set to the app's Expo project with FCM and APNs credentials (M5). Until then the app explains this on Account, and everything else works as normal.
+**Push notifications** do not work in Expo Go (on Android since SDK 53). They need a development or store build of the linked Expo project (`@mauricemcbig/pitchpadi`) with its push credentials: the Firebase (FCM) file for Android and the Apple push key for iOS. Once those are added to the Expo project, mark builds as ready with `EXPO_PUBLIC_PUSH_READY=1`: in the `env` of the profile in `eas.json`, and when starting Metro (`EXPO_PUBLIC_PUSH_READY=1 npx expo start`). Until then, Account says "Notifications are not set up for this build yet", and everything else works as normal (R11).
 
 To try a booking: Play → tap a pitch or a kick-off time → choose the length → "Hold" → your details → "Pay". The test payment screen stands in for Paystack; "Pay" confirms the booking through the API's signed webhook, and "Make the payment fail" shows the failed path.
 

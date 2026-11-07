@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { pushErrorMessage } from "@/lib/push-support";
 import { pushState, turnOffPush, turnOnPush, type PushState } from "./push";
 
 /** This phone's notification state, with turn on and off. */
@@ -22,10 +23,8 @@ export function usePush() {
     setError(null);
     try {
       setState(await action());
-    } catch {
-      setError(
-        "We could not turn on notifications. Check your connection and try again.",
-      );
+    } catch (error) {
+      setError(pushErrorMessage(error));
     } finally {
       setBusy(false);
     }

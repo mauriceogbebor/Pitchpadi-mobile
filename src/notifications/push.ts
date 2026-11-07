@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { registerPushToken, removePushToken } from "@/api/generated";
 import { safeAppPath } from "@/lib/app-path";
+import { pushProblem } from "@/lib/push-support";
 
 /*
  * Push notifications on this phone (M4): venue members hear about new online
@@ -10,8 +11,9 @@ import { safeAppPath } from "@/lib/app-path";
  *
  * expo-notifications is loaded only where push can work. It does nothing in
  * Expo Go on Android (SDK 53+) and on the web preview, so those show a short
- * explanation instead. Push also needs the app's Expo project (EAS_PROJECT_ID),
- * which comes with the store accounts (M5).
+ * explanation instead. Push also needs the app's Expo project (linked in
+ * DB-01) and its FCM and APNs credentials; a build says it is push-ready with
+ * EXPO_PUBLIC_PUSH_READY=1 (R11, see src/lib/push-support.ts).
  */
 
 const STORED = "pitchpadi.pushToken";
@@ -32,12 +34,12 @@ function projectId(): string | undefined {
 
 /** Why push cannot work here, or null when it can. */
 export function unsupportedReason(): string | null {
-  if (Platform.OS === "web")
-    return "Notifications work in the PitchPadi app on Android and iPhone.";
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient)
-    return "Expo Go cannot receive push notifications. They work in the PitchPadi app from the Play Store or App Store.";
-  if (!projectId()) return "Notifications are not set up for this build yet.";
-  return null;
+  return pushProblem({
+    platform: Platform.OS,
+    expoGo: Constants.executionEnvironment === ExecutionEnvironment.StoreClient,
+    projectId: projectId(),
+    pushReady: process.env.EXPO_PUBLIC_PUSH_READY,
+  });
 }
 
 async function load() {

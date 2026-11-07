@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-07 — Honest push switch (0.13.1, R11F)
+
+- The Account screen offers notifications only on builds marked ready for push (`EXPO_PUBLIC_PUSH_READY=1`, set once the build has Firebase and APNs credentials). Other builds say "Notifications are not set up for this build yet." instead of a misleading "Check your connection" error. Push setup errors from the phone show the same message.
+
 ## 2026-11-05 — Development builds (DB-01)
 
 - The app can now be built and installed on a phone as itself, with the PitchPadi icon and splash, through EAS under the same Expo account and Apple team as Repitair. See "Install the real app on your phone" in the README. Adds `expo-dev-client` and `eas.json`.
