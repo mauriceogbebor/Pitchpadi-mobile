@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Body } from "@/components/ui";
+import { LOW_TIME_SECONDS } from "@/lib/recovery";
 import { radius } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -14,11 +15,14 @@ export function HoldCountdown({
   expiresAt,
   serverNow,
   onEnd,
+  onLow,
   color,
 }: {
   expiresAt: string;
   serverNow: string;
   onEnd?: () => void;
+  /** Called once when two minutes or less are left. */
+  onLow?: () => void;
   /** Text colour, for the countdown on the pitch band. */
   color?: string;
 }) {
@@ -46,10 +50,17 @@ export function HoldCountdown({
   }, [end, offset, onEnd]);
 
   const total = Math.ceil(left / 1000);
+  const low = total <= LOW_TIME_SECONDS;
+  const told = useRef(false);
+  useEffect(() => {
+    if (low && total > 0 && !told.current) {
+      told.current = true;
+      onLow?.();
+    }
+  }, [low, total, onLow]);
   const minutes = Math.floor(total / 60);
   const seconds = String(total % 60).padStart(2, "0");
   const share = Math.max(0, Math.min(1, left / full));
-  const low = total <= 120;
   return (
     <View style={{ gap: 8 }}>
       <Body

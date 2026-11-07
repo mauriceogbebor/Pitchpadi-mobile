@@ -30,22 +30,36 @@ export function useHoldSlot(onTaken?: () => void) {
   const [holding, setHolding] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function hold(input: {
-    pitchId: string;
-    startsAt: string;
-    durationMinutes: number;
-  }) {
+  async function hold(
+    input: {
+      pitchId: string;
+      startsAt: string;
+      durationMinutes: number;
+    },
+    options: {
+      /**
+       * Ask for a new hold even if a retry key for this time is saved: used
+       * after a hold has visibly ended, where the old key would only return
+       * that ended hold.
+       */
+      fresh?: boolean;
+      /** Replace the current screen with checkout instead of adding one. */
+      replace?: boolean;
+    } = {},
+  ) {
     const id = slotId(input);
     setHolding(id);
     setError(null);
     const guest = auth.status !== "signedIn";
     let saved: string | undefined;
-    try {
-      saved = (await pendingHolds()).find((item) => item.slot === id)?.key;
-    } catch {
-      // Unreadable storage: a guest is stopped below when saving fails too.
-    }
-    saved ??= memoryKeys.get(id);
+    if (options.fresh) memoryKeys.delete(id);
+    else
+      try {
+        saved = (await pendingHolds()).find((item) => item.slot === id)?.key;
+      } catch {
+        // Unreadable storage: a guest is stopped below when saving fails too.
+      }
+    if (!options.fresh) saved ??= memoryKeys.get(id);
     const reused = saved !== undefined;
     const key = saved ?? newIdempotencyKey();
     memoryKeys.set(id, key);
@@ -96,10 +110,12 @@ export function useHoldSlot(onTaken?: () => void) {
           await clearPending(key).catch(() => undefined);
           memoryKeys.delete(id);
         }
-        router.push({
+        const target = {
           pathname: "/checkout/[holdId]",
           params: { holdId: response.data.hold.id },
-        });
+        } as const;
+        if (options.replace) router.replace(target);
+        else router.push(target);
         return;
       }
       if (response.status < 500) {

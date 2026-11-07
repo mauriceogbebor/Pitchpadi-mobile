@@ -1,6 +1,6 @@
 {
   "name": "pitchpadi-mobile",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/bricolage-grotesque": "^0.4.1",

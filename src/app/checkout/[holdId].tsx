@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getHold,
+  getPublicPitch,
   releaseHold,
   startCheckout,
   type Checkout,
@@ -45,6 +46,8 @@ import {
   formatPhone,
 } from "@/lib/format";
 import { newIdempotencyKey } from "@/lib/ids";
+import { endedMessage, failedPayment, retryChoices } from "@/lib/recovery";
+import { useHoldSlot } from "@/lib/use-hold";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -126,10 +129,12 @@ export default function CheckoutScreen() {
         >
           {hold.isPending ? (
             <Skeleton height={160} count={2} />
-          ) : hold.isError ? (
+          ) : !hold.data ? (
+            // Only when there is nothing to show: a failed refresh keeps the
+            // last known hold on screen (below), with a note.
             <Notice
               tone="danger"
-              title={hold.error.message}
+              title={hold.error?.message ?? "We could not load your booking."}
               action={
                 <Button
                   variant="outline"
@@ -162,7 +167,27 @@ export default function CheckoutScreen() {
               />
             </>
           ) : isLive(hold.data) ? (
-            <LiveHold hold={hold.data} onEnd={onEnd} onChanged={onEnd} />
+            <>
+              {hold.isRefetchError ? (
+                <Notice
+                  title="We can't reach PitchPadi right now"
+                  action={
+                    <Button
+                      variant="outline"
+                      label="Check again"
+                      onPress={() => void hold.refetch()}
+                    />
+                  }
+                >
+                  <Body>
+                    Your time is still held until{" "}
+                    {formatInstantTime(hold.data.expiresAt!)}. If you have paid,
+                    the booking shows here once you are back online.
+                  </Body>
+                </Notice>
+              ) : null}
+              <LiveHold hold={hold.data} onEnd={onEnd} onChanged={onEnd} />
+            </>
           ) : (
             <EndedHold hold={hold.data} />
           )}
@@ -240,6 +265,18 @@ function LiveHold({
   const awaiting =
     awaitingPayment(hold) && !payAnotherWay ? hold.payment : null;
   const [releasing, setReleasing] = useState(false);
+  // Kept here, not in the form, so details typed before a failed payment are
+  // still there when the form comes back.
+  const auth = useAuth();
+  const [draft, setDraft] = useState<Draft>(() => ({
+    name: "",
+    phone: auth.status === "signedIn" ? formatPhone(auth.me.user.phone) : "",
+    email: "",
+    method: "card",
+  }));
+  const failed = failedPayment(hold, until);
+  const [lowTime, setLowTime] = useState(false);
+  const onLow = useCallback(() => setLowTime(true), []);
 
   async function changeTime() {
     setReleasing(true);
@@ -267,8 +304,18 @@ function LiveHold({
           expiresAt={hold.expiresAt!}
           serverNow={hold.serverNow}
           onEnd={onEnd}
+          onLow={onLow}
           color={colors.onBand}
         />
+        {lowTime ? (
+          <Body
+            tone="onBand"
+            weight="semibold"
+            accessibilityLiveRegion="polite"
+          >
+            Under 2 minutes left to {awaiting ? "finish paying" : "pay"}.
+          </Body>
+        ) : null}
         <Body tone="onBandMuted">
           {awaiting
             ? `Finish paying by ${until} and ${hold.localStart} on ${day.long} is yours. This screen updates by itself when the payment arrives.`
@@ -329,10 +376,9 @@ function LiveHold({
             label="Open the payment page"
             onPress={async () => {
               setOpenError(null);
-              if (!(await openPayment(awaiting))) {
-                setOpenError(NO_PAYMENT_PAGE);
-                onChanged();
-              }
+              if (!(await openPayment(awaiting))) setOpenError(NO_PAYMENT_PAGE);
+              // Back from the payment page: check straight away.
+              onChanged();
             }}
           />
           <Button
@@ -343,13 +389,22 @@ function LiveHold({
           />
         </View>
       ) : (
-        <DetailsForm
-          hold={hold}
-          onStarted={() => {
-            setPayAnotherWay(false);
-            onChanged();
-          }}
-        />
+        <>
+          {failed ? (
+            <Notice title={failed.title}>
+              <Body accessibilityLiveRegion="polite">{failed.detail}</Body>
+            </Notice>
+          ) : null}
+          <DetailsForm
+            hold={hold}
+            draft={draft}
+            onDraft={setDraft}
+            onStarted={() => {
+              setPayAnotherWay(false);
+              onChanged();
+            }}
+          />
+        </>
       )}
 
       <Press
@@ -367,26 +422,45 @@ function LiveHold({
   );
 }
 
+type Draft = {
+  name: string;
+  phone: string;
+  email: string;
+  method: PaymentMethod;
+};
+
 function DetailsForm({
   hold,
+  draft,
+  onDraft,
   onStarted,
 }: {
   hold: Hold;
+  draft: Draft;
+  onDraft: (update: (draft: Draft) => Draft) => void;
   onStarted: () => void;
 }) {
   const colors = useColors();
-  const auth = useAuth();
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState(
-    auth.status === "signedIn" ? formatPhone(auth.me.user.phone) : "",
-  );
-  const [email, setEmail] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>("card");
+  const { name, phone, email, method } = draft;
+  const set =
+    <K extends keyof Draft>(field: K) =>
+    (value: Draft[K]) =>
+      onDraft((current) => ({ ...current, [field]: value }));
+  const setName = set("name");
+  const setPhone = set("phone");
+  const setEmail = set("email");
+  const setMethod = set("method");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   // Same key for retries of the same method; a new method needs a new key.
   const key = useRef<{ method: PaymentMethod; value: string } | null>(null);
+  // A payment that failed is finished: the next tap is a new attempt.
+  const failedId =
+    hold.payment?.status === "failed" ? hold.payment.attemptId : null;
+  useEffect(() => {
+    if (failedId) key.current = null;
+  }, [failedId]);
 
   async function pay() {
     if (key.current?.method !== method)
@@ -409,6 +483,8 @@ function DetailsForm({
           key.current = null;
           setError(NO_PAYMENT_PAGE);
         }
+        // Back from the payment page: check straight away.
+        onStarted();
         return;
       }
       const body = response.data as ErrorBody;
@@ -524,38 +600,121 @@ function DetailsForm({
 }
 
 function EndedHold({ hold }: { hold: Hold }) {
-  const message =
-    hold.status === "payment_failed"
-      ? "The payment did not go through, so we released the time. If any money left your account, it will be refunded."
-      : hold.releaseReason === "abandoned"
-        ? "You chose another time, so we released this one."
-        : hold.payment
-          ? "The payment did not arrive in time, so we released the time. If money left your account, it will be refunded."
-          : "The clock ran out before payment, so we released the time.";
   return (
-    <Notice
-      title="This hold has ended"
-      action={
-        <Button
-          label={`Try ${hold.localStart} again`}
-          onPress={() =>
-            router.replace({
-              pathname: "/pitch/[pitchId]",
-              params: {
+    <View style={{ gap: space.lg }}>
+      <Notice title="This hold has ended">
+        <Body>{endedMessage(hold)}</Body>
+      </Notice>
+      <Card>
+        <Heading level={3}>{hold.pitch.facilityName}</Heading>
+        <Body tone="muted">
+          {hold.pitch.name}, {dateParts(hold.localDate).long}, {hold.localStart}{" "}
+          to {hold.localEnd}
+        </Body>
+      </Card>
+      <HoldAgain hold={hold} />
+    </View>
+  );
+}
+
+/**
+ * The quickest way back in after a hold ends: the same time again in one tap
+ * if it is still open, otherwise the nearest open times of the same length.
+ * The API decides what is open and what it costs.
+ */
+function HoldAgain({ hold }: { hold: Hold }) {
+  const day = useQuery({
+    queryKey: ["pitch", hold.pitch.id, hold.localDate],
+    queryFn: async () => {
+      const response = await getPublicPitch(hold.pitch.id, {
+        date: hold.localDate,
+      });
+      if (response.status !== 200) throw new Error("unavailable");
+      return response.data;
+    },
+  });
+  const slot = useHoldSlot(() => void day.refetch());
+  const allTimes = () =>
+    router.replace({
+      pathname: "/pitch/[pitchId]",
+      params: {
+        pitchId: hold.pitch.id,
+        date: hold.localDate,
+        duration: String(hold.durationMinutes),
+      },
+    });
+  const again = (startsAt: string) =>
+    void slot.hold(
+      {
+        pitchId: hold.pitch.id,
+        startsAt,
+        durationMinutes: hold.durationMinutes,
+      },
+      { fresh: true, replace: true },
+    );
+
+  if (day.isPending) return <Skeleton height={56} count={1} />;
+  const choices = day.isError
+    ? null
+    : retryChoices(day.data.startTimes, hold.startsAt, hold.durationMinutes);
+  const length = formatDuration(hold.durationMinutes);
+
+  return (
+    <View style={{ gap: space.sm }}>
+      {choices?.same ? (
+        <>
+          <Body>
+            {hold.localStart} is still open. Hold it again and you get a fresh
+            clock.
+          </Body>
+          <Button
+            label={`Hold ${hold.localStart} again, ${formatNaira(choices.same.offer.amountDueMinor)}`}
+            busy={slot.isHolding({
+              pitchId: hold.pitch.id,
+              startsAt: hold.startsAt,
+              durationMinutes: hold.durationMinutes,
+            })}
+            disabled={slot.holding}
+            onPress={() => again(hold.startsAt)}
+          />
+        </>
+      ) : choices && choices.nearby.length > 0 ? (
+        <>
+          <Heading level={3}>
+            {hold.localStart} has been taken. Nearest open times ({length})
+          </Heading>
+          {choices.nearby.map((item) => (
+            <Button
+              key={item.startsAt}
+              variant="outline"
+              label={`Hold ${item.localStart}, ${formatNaira(item.offer.amountDueMinor)}`}
+              busy={slot.isHolding({
                 pitchId: hold.pitch.id,
-                date: hold.localDate,
-                start: hold.startsAt,
-              },
-            })
-          }
-        />
-      }
-    >
-      <Body>{message}</Body>
-      <Body tone="muted">
-        If someone else has taken it, you can pick another time there.
-      </Body>
-    </Notice>
+                startsAt: item.startsAt,
+                durationMinutes: hold.durationMinutes,
+              })}
+              disabled={slot.holding}
+              onPress={() => again(item.startsAt)}
+            />
+          ))}
+        </>
+      ) : choices ? (
+        <Body>
+          No {length} times are open at this pitch on that day any more. Try
+          another day or a different length.
+        </Body>
+      ) : null}
+      {slot.error ? (
+        <Body tone="danger" accessibilityLiveRegion="assertive">
+          {slot.error}
+        </Body>
+      ) : null}
+      <Button
+        variant={choices?.same || choices?.nearby.length ? "ghost" : "primary"}
+        label="See all times at this pitch"
+        onPress={allTimes}
+      />
+    </View>
   );
 }
 

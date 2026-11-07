@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-07 — Booking and recovery (0.14.0, BR-01)
+
+- A failed payment no longer loses the time: checkout says "Your card payment did not go through", shows how long the time is still held, and keeps the name, phone and email already typed. Trying again starts a fresh payment.
+- When a hold ends, checkout explains why and offers the same time again in one tap if it is still open, or the three nearest open times of the same length if it was taken, plus every time at the pitch.
+- Losing the connection while paying keeps the hold on screen with "We can't reach PitchPadi right now" and a "Check again" button, instead of replacing it with an error.
+- Under two minutes left, the hold screen says so, and screen readers announce it once.
+- Coming back from the payment page checks the payment straight away.
+
 ## 2026-11-07 — Honest push switch (0.13.1, R11F)
 
 - The Account screen offers notifications only on builds marked ready for push (`EXPO_PUBLIC_PUSH_READY=1`, set once the build has Firebase and APNs credentials). Other builds say "Notifications are not set up for this build yet." instead of a misleading "Check your connection" error. Push setup errors from the phone show the same message.
