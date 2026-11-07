@@ -46,7 +46,9 @@ import {
   formatPhone,
 } from "@/lib/format";
 import { newIdempotencyKey } from "@/lib/ids";
+import { readPref, removePref, writePref } from "@/lib/prefs-store";
 import { endedMessage, failedPayment, retryChoices } from "@/lib/recovery";
+import { DETAILS_KEY, parseDetails } from "@/lib/returning";
 import { useHoldSlot } from "@/lib/use-hold";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -268,12 +270,34 @@ function LiveHold({
   // Kept here, not in the form, so details typed before a failed payment are
   // still there when the form comes back.
   const auth = useAuth();
+  const accountPhone =
+    auth.status === "signedIn" ? formatPhone(auth.me.user.phone) : "";
   const [draft, setDraft] = useState<Draft>(() => ({
     name: "",
-    phone: auth.status === "signedIn" ? formatPhone(auth.me.user.phone) : "",
+    phone: accountPhone,
     email: "",
     method: "card",
+    remember: false,
   }));
+  // Details the player asked this phone to remember (RP-01). They only fill
+  // empty fields, so nothing typed already is overwritten.
+  useEffect(() => {
+    let active = true;
+    void readPref(DETAILS_KEY).then((raw) => {
+      const saved = parseDetails(raw);
+      if (!active || !saved) return;
+      setDraft((current) => ({
+        ...current,
+        name: current.name || saved.name,
+        phone: current.phone || saved.phone,
+        email: current.email || saved.email,
+        remember: true,
+      }));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const failed = failedPayment(hold, until);
   const [lowTime, setLowTime] = useState(false);
   const onLow = useCallback(() => setLowTime(true), []);
@@ -427,6 +451,8 @@ type Draft = {
   phone: string;
   email: string;
   method: PaymentMethod;
+  /** Keep name, phone and email on this phone for next time (opt-in). */
+  remember: boolean;
 };
 
 function DetailsForm({
@@ -441,6 +467,7 @@ function DetailsForm({
   onStarted: () => void;
 }) {
   const colors = useColors();
+  const queryClient = useQueryClient();
   const { name, phone, email, method } = draft;
   const set =
     <K extends keyof Draft>(field: K) =>
@@ -450,6 +477,7 @@ function DetailsForm({
   const setPhone = set("phone");
   const setEmail = set("email");
   const setMethod = set("method");
+  const setRemember = set("remember");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -476,6 +504,15 @@ function DetailsForm({
       );
       if (response.status === 200 || response.status === 201) {
         const checkout: Checkout = response.data.checkout;
+        // Only what the player typed, and only if they asked; unticking
+        // forgets what was saved before.
+        if (draft.remember)
+          await writePref(
+            DETAILS_KEY,
+            JSON.stringify({ name, phone, email: email.trim() }),
+          );
+        else await removePref(DETAILS_KEY);
+        void queryClient.invalidateQueries({ queryKey: ["savedDetails"] });
         onStarted();
         if (!(await openPayment(checkout))) {
           // Never treat a payment without a page as started: the next try
@@ -585,6 +622,28 @@ function DetailsForm({
         })}
         {errors.method ? <Body tone="danger">{errors.method}</Body> : null}
       </View>
+      <Press
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: draft.remember }}
+        aria-checked={draft.remember}
+        accessibilityLabel="Remember my details on this phone"
+        accessibilityHint="Fills in your name, phone and email next time. You can forget them in Account."
+        onPress={() => setRemember(!draft.remember)}
+        style={styles.remember}
+      >
+        <Ionicons
+          name={draft.remember ? "checkbox" : "square-outline"}
+          size={24}
+          color={draft.remember ? colors.link : colors.textMuted}
+        />
+        <View style={{ flex: 1 }}>
+          <Body weight="semibold">Remember my details on this phone</Body>
+          <Body tone="muted" size={14}>
+            Your name, phone and email fill in next time. Forget them any time
+            in Account.
+          </Body>
+        </View>
+      </Press>
       {error ? (
         <Body tone="danger" accessibilityLiveRegion="assertive">
           {error}
@@ -754,6 +813,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: space.md,
     paddingVertical: space.sm,
+  },
+  remember: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: space.sm,
+    minHeight: TAP,
+    paddingVertical: space.xs,
   },
   textButton: {
     flexDirection: "row",

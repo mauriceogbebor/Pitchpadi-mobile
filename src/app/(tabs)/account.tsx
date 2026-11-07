@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { useAuth } from "@/auth/auth-context";
 import { PushCard } from "@/components/push-card";
+import { SavedDetailsCard } from "@/components/saved-details-card";
 import { PitchBand } from "@/components/pitch-band";
 import {
   Body,
@@ -72,6 +73,7 @@ export default function AccountScreen() {
             onPress={() => router.push("/sign-in")}
           />
         </PitchBand>
+        <SavedDetailsCard />
       </Screen>
     );
 
@@ -148,6 +150,7 @@ export default function AccountScreen() {
             : "Your booking confirmations and a reminder before kick-off."
         }
       />
+      <SavedDetailsCard />
       <View style={{ gap: space.sm }}>
         <Button
           variant="outline"

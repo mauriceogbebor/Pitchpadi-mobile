@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-07 — Returning players (0.15.0, RP-01)
+
+- Play remembers your usual area, game length, pitch size and budget, and opens on them next time. A choice on the first-launch welcome still wins.
+- Checkout can remember your name, phone and email on this phone, only if you tick "Remember my details on this phone". They fill in next time; Account shows what is saved, with "Forget my details".
+- Book again shows the weeks you already have: "You're booked" with View, or "You're holding this" with Continue, instead of "Taken or closed".
+
 ## 2026-11-07 — Booking and recovery (0.14.0, BR-01)
 
 - A failed payment no longer loses the time: checkout says "Your card payment did not go through", shows how long the time is still held, and keeps the name, phone and email already typed. Trying again starts a fresh payment.

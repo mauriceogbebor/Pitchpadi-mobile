@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -53,6 +53,8 @@ import { mergePages, openLine, shownLine } from "@/lib/search-pages";
 import { useNearMe } from "@/lib/use-near-me";
 import { onStartPlay } from "@/lib/welcome";
 import { radius, space, TAP } from "@/theme/tokens";
+import { readPref, writePref } from "@/lib/prefs-store";
+import { parsePlayChoices, PLAY_KEY } from "@/lib/returning";
 import { useColors } from "@/theme/use-theme";
 
 const TIME_OPTIONS = TIMES_OF_DAY.map((item) => ({
@@ -80,11 +82,50 @@ export default function PlayScreen() {
   const { nearMe, turnOn, turnOff } = useNearMe();
   const near = nearMe.status === "on" ? nearParam(nearMe.point) : undefined;
 
+  // The player's usual choices: area, game length, size and budget (RP-01,
+  // MK-F5). Restored before the first search, so it runs once, for them.
+  const [restored, setRestored] = useState(false);
+  const welcomeArea = useRef(false);
+  useEffect(() => {
+    let active = true;
+    void readPref(PLAY_KEY).then((raw) => {
+      if (!active) return;
+      const usual = parsePlayChoices(raw);
+      // A choice made on the welcome just now wins over an older habit.
+      if (!welcomeArea.current) setArea(usual.area);
+      setDuration(usual.duration);
+      setFilters((current) => ({
+        ...current,
+        type: usual.type,
+        maxPrice: usual.maxPrice,
+      }));
+      setRestored(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!restored) return;
+    void writePref(
+      PLAY_KEY,
+      JSON.stringify({
+        area,
+        duration,
+        type: filters.type,
+        maxPrice: filters.maxPrice,
+      }),
+    );
+  }, [restored, area, duration, filters.type, filters.maxPrice]);
+
   // A choice made on the first-launch welcome (SV-02): an area, or Near me.
   useEffect(
     () =>
       onStartPlay((choice) => {
-        if (choice.kind === "area") setArea(choice.slug);
+        if (choice.kind === "area") {
+          welcomeArea.current = true;
+          setArea(choice.slug);
+        }
         if (choice.kind === "nearMe")
           void turnOn().then((ok) => {
             if (ok) setFilters((current) => ({ ...current, sort: "nearest" }));
@@ -120,6 +161,7 @@ export default function PlayScreen() {
   const selectionKey = playSelectionKey(selection);
   const search = useInfiniteQuery({
     queryKey: ["search", selectionKey],
+    enabled: restored,
     queryFn: async ({ pageParam }) => {
       // Remember what this answer is for, so it is never shown as the answer
       // to a later choice (review of 3 November).

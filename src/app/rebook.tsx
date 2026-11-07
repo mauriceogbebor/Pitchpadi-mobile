@@ -1,6 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import {
+  router,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
+import { useCallback } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,6 +29,10 @@ import {
   formatNaira,
   lagosToday,
 } from "@/lib/format";
+import { useAuth } from "@/auth/auth-context";
+import { useMyBookings } from "@/lib/my-bookings";
+import { myWeek, type MyWeek } from "@/lib/returning";
+import { useDeviceCheckouts } from "@/lib/use-device-checkouts";
 import { useHoldSlot } from "@/lib/use-hold";
 import { space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -70,6 +80,50 @@ export default function RebookScreen() {
   });
   const slot = useHoldSlot(() => void weekly.refetch());
   const data = weekly.data;
+  // The player's own holds and bookings, from their account and from this
+  // phone, so their weeks read "You're booked" or "You're holding this"
+  // rather than "Taken or closed" (RB-F2).
+  const account = useMyBookings();
+  const signedIn = useAuth().status === "signedIn";
+  const device = useDeviceCheckouts();
+  const holds = [
+    ...(account.data?.inProgress ?? []),
+    ...(device.data?.resume ?? []),
+  ];
+  const bookings = [
+    ...(account.data?.upcoming ?? []),
+    ...(device.data?.booked ?? []).flatMap((hold) =>
+      hold.booking
+        ? [{ ...hold, reference: hold.booking.reference, status: "confirmed" }]
+        : [],
+    ),
+  ];
+  // Back from a checkout: show what changed.
+  const { refetch: refetchWeekly } = weekly;
+  const { refetch: refetchAccount } = account;
+  const { refresh: refreshDevice } = device;
+  useFocusEffect(
+    useCallback(() => {
+      void refetchWeekly();
+      // Signed-in only: refetch ignores `enabled`.
+      if (signedIn) void refetchAccount();
+      void refreshDevice();
+    }, [refetchWeekly, refetchAccount, refreshDevice, signedIn]),
+  );
+  const mine = (date: string): MyWeek =>
+    data
+      ? myWeek(
+          date,
+          {
+            pitchId: data.pitch.id,
+            localStart: data.localStart,
+            durationMinutes: data.durationMinutes,
+          },
+          holds,
+          bookings,
+          new Date(),
+        )
+      : null;
   const open = data?.options.filter((option) => option.slot).length ?? 0;
 
   return (
@@ -134,6 +188,7 @@ export default function RebookScreen() {
                     <WeekRow
                       key={option.date}
                       option={option}
+                      mine={mine(option.date)}
                       busy={
                         !!option.slot &&
                         slot.isHolding({
@@ -185,11 +240,13 @@ export default function RebookScreen() {
 
 function WeekRow({
   option,
+  mine,
   busy,
   disabled,
   onHold,
 }: {
   option: WeeklyOption;
+  mine: MyWeek;
   busy: boolean;
   disabled: boolean;
   onHold: () => void;
@@ -204,17 +261,30 @@ function WeekRow({
         ? "Tomorrow"
         : `${day.weekday} ${day.day} ${day.month}`;
   return (
-    <Card style={[styles.row, !option.slot && { opacity: 0.75 }]}>
+    <Card style={[styles.row, !option.slot && !mine && { opacity: 0.75 }]}>
       <DateBlock
         date={option.date}
-        strong={!!option.slot}
-        faded={!option.slot}
+        strong={!!option.slot || !!mine}
+        faded={!option.slot && !mine}
       />
       <View style={{ flex: 1, gap: 2 }}>
         <Body weight="semibold" numeric>
           {when}
         </Body>
-        {option.slot ? (
+        {mine ? (
+          <View style={styles.taken}>
+            <Ionicons
+              name={
+                mine.kind === "booked" ? "checkmark-circle" : "time-outline"
+              }
+              size={15}
+              color={colors.link}
+            />
+            <Body tone="link" size={14} weight="semibold">
+              {mine.kind === "booked" ? "You're booked" : "You're holding this"}
+            </Body>
+          </View>
+        ) : option.slot ? (
           <Body tone="muted" size={14} numeric>
             Open, {formatNaira(option.slot.amountDueMinor)}
           </Body>
@@ -231,7 +301,29 @@ function WeekRow({
           </View>
         )}
       </View>
-      {option.slot ? (
+      {mine ? (
+        <Button
+          variant="outline"
+          label={mine.kind === "booked" ? "View" : "Continue"}
+          accessibilityLabel={
+            mine.kind === "booked"
+              ? `View your booking for ${when}`
+              : `Continue your checkout for ${when}`
+          }
+          onPress={() =>
+            mine.kind === "booked"
+              ? router.push({
+                  pathname: "/booking/[reference]",
+                  params: { reference: mine.reference },
+                })
+              : router.push({
+                  pathname: "/checkout/[holdId]",
+                  params: { holdId: mine.holdId },
+                })
+          }
+          style={styles.hold}
+        />
+      ) : option.slot ? (
         <Button
           label="Hold"
           icon="lock-closed-outline"
