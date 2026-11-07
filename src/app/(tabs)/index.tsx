@@ -88,6 +88,7 @@ export default function PlayScreen() {
         if (choice.kind === "nearMe")
           void turnOn().then((ok) => {
             if (ok) setFilters((current) => ({ ...current, sort: "nearest" }));
+            else setAreaOpen(true);
           });
       }),
     [turnOn],
