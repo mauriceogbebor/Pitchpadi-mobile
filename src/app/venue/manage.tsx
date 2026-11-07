@@ -28,9 +28,10 @@ import {
 import { setupSteps, type StepState } from "@/lib/setup-rules";
 import { space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
+import { needsVenue } from "@/components/needs-venue";
 
 /** The venue's setup: review, facilities and pitches, and what to do next. */
-export default function ManageVenueScreen() {
+function ManageVenueScreen() {
   const { organizationId } = useLocalSearchParams<{ organizationId: string }>();
   const auth = useAuth();
   const userId = auth.status === "signedIn" ? auth.me.user.id : null;
@@ -102,7 +103,8 @@ export default function ManageVenueScreen() {
       {!owner && (
         <Notice title="Only the owner can change the venue">
           <Body tone="muted">
-            You can see the setup here and run bookings from the Venue tab.
+            You can see the setup here, close a pitch with Closures, and run
+            bookings from the Venue tab.
           </Body>
         </Notice>
       )}
@@ -199,22 +201,79 @@ export default function ManageVenueScreen() {
                 </View>
               )}
               {pitches.map((pitch) => (
-                <PitchRow
-                  key={pitch.pitch_id}
-                  pitch={pitch}
-                  disabled={!owner}
+                <View key={pitch.pitch_id} style={{ gap: space.xs }}>
+                  <PitchRow
+                    pitch={pitch}
+                    disabled={!owner}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/venue/hours",
+                        params: { organizationId, pitchId: pitch.pitch_id },
+                      })
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    icon="close-circle-outline"
+                    label="Closures"
+                    accessibilityLabel={`Closures for ${pitch.pitch_name}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/venue/closures",
+                        params: {
+                          organizationId,
+                          pitchId: pitch.pitch_id,
+                          pitchName: pitch.pitch_name,
+                        },
+                      })
+                    }
+                    style={{ alignSelf: "flex-start" }}
+                  />
+                </View>
+              ))}
+              {owner && (
+                <Button
+                  variant="outline"
+                  icon="add"
+                  label="Add a pitch"
+                  accessibilityLabel={`Add a pitch to ${facility.facility_name}`}
                   onPress={() =>
                     router.push({
-                      pathname: "/venue/hours",
-                      params: { organizationId, pitchId: pitch.pitch_id },
+                      pathname: "/venue/add-pitch",
+                      params: {
+                        organizationId,
+                        facilityId: facility.facility_id,
+                        facilityName: facility.facility_name,
+                      },
                     })
                   }
                 />
-              ))}
+              )}
             </Card>
           ))}
+          {owner && (
+            <Card>
+              <Heading level={3}>Your team</Heading>
+              <Body tone="muted">
+                Add staff by phone number so they can run bookings and close a
+                pitch.
+              </Body>
+              <Button
+                variant="outline"
+                icon="people-outline"
+                label="Manage team"
+                onPress={() =>
+                  router.push({
+                    pathname: "/venue/staff",
+                    params: { organizationId },
+                  })
+                }
+              />
+            </Card>
+          )}
           <Body tone="muted" size={14}>
-            Adding another facility or pitch is on the website for now.
+            Adding a whole new venue at another address: Account, Set up another
+            venue.
           </Body>
         </>
       )}
@@ -394,3 +453,5 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
   },
 });
+
+export default needsVenue(ManageVenueScreen);

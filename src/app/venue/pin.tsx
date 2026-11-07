@@ -20,6 +20,7 @@ import {
 import { type Point, parsePoint, pinDirectionsUrl } from "@/lib/geo";
 import { space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
+import { needsVenue } from "@/components/needs-venue";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 
@@ -29,7 +30,7 @@ type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
  * The quickest way is to stand at the venue and use this phone's location;
  * pasting coordinates or a Google Maps link also works.
  */
-export default function VenuePinScreen() {
+function VenuePinScreen() {
   const { organizationId, facilityId } = useLocalSearchParams<{
     organizationId: string;
     facilityId: string;
@@ -255,3 +256,5 @@ export default function VenuePinScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+export default needsVenue(VenuePinScreen);

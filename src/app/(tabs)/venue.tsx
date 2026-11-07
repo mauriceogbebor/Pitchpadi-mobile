@@ -315,25 +315,67 @@ export default function VenueScreen() {
                       {pitch.facilityName}
                     </Body>
                   ) : null}
-                  <View>
-                    {data.entries
-                      .filter((entry) => entry.pitchId === pitch.id)
-                      .map((entry, index, list) => (
-                        <EntryRow
-                          key={entry.id}
-                          entry={entry}
-                          bar={barColor[tone(entry)]}
-                          last={index === list.length - 1}
-                          onPress={() => openDetails(entry)}
-                        />
-                      ))}
-                  </View>
+                  <PitchDay
+                    entries={data.entries.filter(
+                      (entry) => entry.pitchId === pitch.id,
+                    )}
+                    bar={(entry) => barColor[tone(entry)]}
+                    onOpen={openDetails}
+                  />
                 </Section>
               ))
           ))
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * One pitch's day: live games in time order, and cancelled ones folded into
+ * a single line below them, so they never push today's games down (R11-F7).
+ */
+function PitchDay({
+  entries,
+  bar,
+  onOpen,
+}: {
+  entries: CalendarEntry[];
+  bar: (entry: CalendarEntry) => string;
+  onOpen: (entry: CalendarEntry) => void;
+}) {
+  const [showCancelled, setShowCancelled] = useState(false);
+  const live = entries.filter((entry) => entry.kind !== "cancelled");
+  const cancelled = entries.filter((entry) => entry.kind === "cancelled");
+  const shown = showCancelled ? [...live, ...cancelled] : live;
+  return (
+    <View>
+      {shown.map((entry, index) => (
+        <EntryRow
+          key={entry.id}
+          entry={entry}
+          bar={bar(entry)}
+          last={index === shown.length - 1}
+          onPress={() => onOpen(entry)}
+        />
+      ))}
+      {cancelled.length > 0 ? (
+        <Button
+          variant="ghost"
+          icon={showCancelled ? "chevron-up" : "chevron-down"}
+          label={
+            showCancelled ? "Hide cancelled" : `${cancelled.length} cancelled`
+          }
+          accessibilityLabel={
+            showCancelled
+              ? "Hide cancelled bookings"
+              : `Show ${cancelled.length} cancelled ${cancelled.length === 1 ? "booking" : "bookings"}`
+          }
+          onPress={() => setShowCancelled(!showCancelled)}
+          style={{ alignSelf: "flex-start" }}
+        />
+      ) : null}
+    </View>
   );
 }
 

@@ -43,11 +43,12 @@ import {
 } from "@/lib/setup-rules";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
+import { needsVenue } from "@/components/needs-venue";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 
 /** Weekly opening hours, prices, cancellation terms and publishing for one pitch. */
-export default function HoursScreen() {
+function HoursScreen() {
   const { organizationId, pitchId } = useLocalSearchParams<{
     organizationId: string;
     pitchId: string;
@@ -598,3 +599,5 @@ const styles = StyleSheet.create({
   },
   bar: { borderTopWidth: 1, padding: space.lg, gap: space.sm },
 });
+
+export default needsVenue(HoursScreen);

@@ -36,11 +36,12 @@ import {
   type VenueMethod,
 } from "@/lib/venue";
 import { space } from "@/theme/tokens";
+import { needsVenue } from "@/components/needs-venue";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 
 /** One booking on the venue's day: who, when, and what the venue can do. */
-export default function VenueBookingScreen() {
+function VenueBookingScreen() {
   const { reservationId, organizationId, date } = useLocalSearchParams<{
     reservationId: string;
     organizationId: string;
@@ -339,3 +340,5 @@ function Row({
 const styles = StyleSheet.create({
   row: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
 });
+
+export default needsVenue(VenueBookingScreen);

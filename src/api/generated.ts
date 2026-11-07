@@ -642,6 +642,33 @@ export interface PolicySummary {
   summary: string;
 }
 
+export interface Closure {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  id: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  startsAt: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  endsAt: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localDate: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  localEndDate: string;
+  localStart: string;
+  localEnd: string;
+  allDay: boolean;
+  /** @nullable */
+  note: string | null;
+}
+
+export interface Member {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  userId: string;
+  phone: string;
+  role: Role;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
+  addedAt: string;
+}
+
 export interface PublicPitch {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
@@ -1477,6 +1504,39 @@ export type SetPublicationBody = {
 
 export type SetPublication200 = {
   publicStatus: PublicStatus;
+};
+
+export type ListClosures200 = {
+  closures: Closure[];
+};
+
+export type AddClosureBody = {
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  date: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$ */
+  endDate?: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$|^24:00$ */
+  from?: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$|^24:00$ */
+  to?: string;
+  /** @maxLength 80 */
+  note?: string;
+};
+
+export type AddClosure201 = {
+  closure: Closure;
+};
+
+export type ListMembers200 = {
+  members: Member[];
+};
+
+export type AddStaffBody = {
+  phone: string;
+};
+
+export type AddStaff201 = {
+  member: Member;
 };
 
 export type ListPublicPitchesParams = {
@@ -3339,10 +3399,15 @@ export type addPitchResponse404 = {
   status: 404
 }
 
+export type addPitchResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
 export type addPitchResponseSuccess = (addPitchResponse201) & {
   headers: Headers;
 };
-export type addPitchResponseError = (addPitchResponse400 | addPitchResponse401 | addPitchResponse403 | addPitchResponse404) & {
+export type addPitchResponseError = (addPitchResponse400 | addPitchResponse401 | addPitchResponse403 | addPitchResponse404 | addPitchResponse409) & {
   headers: Headers;
 };
 
@@ -3359,7 +3424,7 @@ export const getAddPitchUrl = (organizationId: string,
 
 /**
  * Requires the organization's owner.
- * @summary Add a pitch to a facility
+ * @summary Add a pitch to a facility. 409 if the facility already has a pitch with that name (so a retried request never makes two)
  */
 export const addPitch = async (organizationId: string,
     facilityId: string,
@@ -3730,6 +3795,390 @@ return appFetch<setPublicationResponse>(getSetPublicationUrl(organizationId,pitc
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(setPublicationBody)
+  }
+);}
+
+
+
+export type listClosuresResponse200 = {
+  data: ListClosures200
+  status: 200
+}
+
+export type listClosuresResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listClosuresResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listClosuresResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type listClosuresResponseSuccess = (listClosuresResponse200) & {
+  headers: Headers;
+};
+export type listClosuresResponseError = (listClosuresResponse401 | listClosuresResponse403 | listClosuresResponse404) & {
+  headers: Headers;
+};
+
+export type listClosuresResponse = (listClosuresResponseSuccess | listClosuresResponseError)
+
+export const getListClosuresUrl = (organizationId: string,
+    pitchId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/pitches/${pitchId}/closures`
+}
+
+/**
+ * Requires an owner or staff member of the organization.
+ * @summary Closures that have not finished yet, soonest first
+ */
+export const listClosures = async (organizationId: string,
+    pitchId: string, options?: Parameters<typeof appFetch>[1]): Promise<listClosuresResponse> => {
+
+  return appFetch<listClosuresResponse>(getListClosuresUrl(organizationId,pitchId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type addClosureResponse201 = {
+  data: AddClosure201
+  status: 201
+}
+
+export type addClosureResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type addClosureResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type addClosureResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type addClosureResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type addClosureResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type addClosureResponseSuccess = (addClosureResponse201) & {
+  headers: Headers;
+};
+export type addClosureResponseError = (addClosureResponse400 | addClosureResponse401 | addClosureResponse403 | addClosureResponse404 | addClosureResponse409) & {
+  headers: Headers;
+};
+
+export type addClosureResponse = (addClosureResponseSuccess | addClosureResponseError)
+
+export const getAddClosureUrl = (organizationId: string,
+    pitchId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/pitches/${pitchId}/closures`
+}
+
+/**
+ * Requires an owner or staff member of the organization.
+ * @summary Close a pitch for whole days or part of one day, so players cannot book it. 409 (with the games' times, no player details) if a booking or live hold is in the way
+ */
+export const addClosure = async (organizationId: string,
+    pitchId: string,
+    addClosureBody: AddClosureBody, options?: Parameters<typeof appFetch>[1]): Promise<addClosureResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<addClosureResponse>(getAddClosureUrl(organizationId,pitchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addClosureBody)
+  }
+);}
+
+
+
+export type removeClosureResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type removeClosureResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type removeClosureResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type removeClosureResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type removeClosureResponseSuccess = (removeClosureResponse200) & {
+  headers: Headers;
+};
+export type removeClosureResponseError = (removeClosureResponse401 | removeClosureResponse403 | removeClosureResponse404) & {
+  headers: Headers;
+};
+
+export type removeClosureResponse = (removeClosureResponseSuccess | removeClosureResponseError)
+
+export const getRemoveClosureUrl = (organizationId: string,
+    pitchId: string,
+    closureId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/pitches/${pitchId}/closures/${closureId}`
+}
+
+/**
+ * Requires an owner or staff member of the organization.
+ * @summary Open the time again
+ */
+export const removeClosure = async (organizationId: string,
+    pitchId: string,
+    closureId: string, options?: Parameters<typeof appFetch>[1]): Promise<removeClosureResponse> => {
+
+  return appFetch<removeClosureResponse>(getRemoveClosureUrl(organizationId,pitchId,closureId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type listMembersResponse200 = {
+  data: ListMembers200
+  status: 200
+}
+
+export type listMembersResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type listMembersResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type listMembersResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type listMembersResponseSuccess = (listMembersResponse200) & {
+  headers: Headers;
+};
+export type listMembersResponseError = (listMembersResponse401 | listMembersResponse403 | listMembersResponse404) & {
+  headers: Headers;
+};
+
+export type listMembersResponse = (listMembersResponseSuccess | listMembersResponseError)
+
+export const getListMembersUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/members`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary The venue's owners and staff
+ */
+export const listMembers = async (organizationId: string, options?: Parameters<typeof appFetch>[1]): Promise<listMembersResponse> => {
+
+  return appFetch<listMembersResponse>(getListMembersUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type addStaffResponse201 = {
+  data: AddStaff201
+  status: 201
+}
+
+export type addStaffResponse400 = {
+  data: ErrorBody
+  status: 400
+}
+
+export type addStaffResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type addStaffResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type addStaffResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type addStaffResponse409 = {
+  data: ErrorBody
+  status: 409
+}
+
+export type addStaffResponseSuccess = (addStaffResponse201) & {
+  headers: Headers;
+};
+export type addStaffResponseError = (addStaffResponse400 | addStaffResponse401 | addStaffResponse403 | addStaffResponse404 | addStaffResponse409) & {
+  headers: Headers;
+};
+
+export type addStaffResponse = (addStaffResponseSuccess | addStaffResponseError)
+
+export const getAddStaffUrl = (organizationId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/members`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Add a staff member by phone number. They see the venue the next time they sign in with that number. 409 if already on the team
+ */
+export const addStaff = async (organizationId: string,
+    addStaffBody: AddStaffBody, options?: Parameters<typeof appFetch>[1]): Promise<addStaffResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return appFetch<addStaffResponse>(getAddStaffUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addStaffBody)
+  }
+);}
+
+
+
+export type removeStaffResponse200 = {
+  data: Ok
+  status: 200
+}
+
+export type removeStaffResponse401 = {
+  data: ErrorBody
+  status: 401
+}
+
+export type removeStaffResponse403 = {
+  data: ErrorBody
+  status: 403
+}
+
+export type removeStaffResponse404 = {
+  data: ErrorBody
+  status: 404
+}
+
+export type removeStaffResponseSuccess = (removeStaffResponse200) & {
+  headers: Headers;
+};
+export type removeStaffResponseError = (removeStaffResponse401 | removeStaffResponse403 | removeStaffResponse404) & {
+  headers: Headers;
+};
+
+export type removeStaffResponse = (removeStaffResponseSuccess | removeStaffResponseError)
+
+export const getRemoveStaffUrl = (organizationId: string,
+    userId: string,) => {
+
+
+
+
+  return `/v1/owner/organizations/${organizationId}/members/${userId}`
+}
+
+/**
+ * Requires the organization's owner.
+ * @summary Take a staff member off the venue (owners cannot be removed)
+ */
+export const removeStaff = async (organizationId: string,
+    userId: string, options?: Parameters<typeof appFetch>[1]): Promise<removeStaffResponse> => {
+
+  return appFetch<removeStaffResponse>(getRemoveStaffUrl(organizationId,userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
   }
 );}
 

@@ -10,11 +10,12 @@ import {
   VenueFields,
   type VenueDraft,
 } from "@/components/venue-fields";
+import { needsVenue } from "@/components/needs-venue";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 
 /** Edit the venue's name, area, address, landmark and amenities. */
-export default function VenueDetailsScreen() {
+function VenueDetailsScreen() {
   const { organizationId, facilityId } = useLocalSearchParams<{
     organizationId: string;
     facilityId: string;
@@ -127,3 +128,5 @@ function EditForm({
     </>
   );
 }
+
+export default needsVenue(VenueDetailsScreen);

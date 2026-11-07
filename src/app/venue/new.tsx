@@ -37,6 +37,13 @@ import {
 import { newIdempotencyKey } from "@/lib/ids";
 import { nairaInput, toKobo } from "@/lib/money";
 import {
+  lagosInstant,
+  REPEAT_CHOICES,
+  repeatSummary,
+  weeklyDates,
+  type WeekResult,
+} from "@/lib/repeat";
+import {
   CHANNELS,
   useVenueCalendar,
   venueCalendarKey,
@@ -44,6 +51,7 @@ import {
 } from "@/lib/venue";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
+import { needsVenue } from "@/components/needs-venue";
 
 type ErrorBody = { error?: string; fieldErrors?: Record<string, string[]> };
 type Payment = "unpaid" | "cash" | "pos" | "bank_transfer";
@@ -58,15 +66,8 @@ const LENGTHS = [60, 90, 120, 30, 150, 180, 240, 300];
 const DAY_STARTS = Array.from({ length: 36 }, (_, i) => 360 + i * 30); // 6:00 am – 11:30 pm
 const NIGHT_STARTS = Array.from({ length: 12 }, (_, i) => i * 30); // 12:00 – 5:30 am
 
-/** Lagos is UTC+1 all year. */
-function lagosInstant(date: string, minute: number): string {
-  const hh = String(Math.floor(minute / 60)).padStart(2, "0");
-  const mm = String(minute % 60).padStart(2, "0");
-  return `${date}T${hh}:${mm}:00+01:00`;
-}
-
 /** Record a phone, WhatsApp or walk-in booking, with a live check of the time. */
-export default function AddBookingScreen() {
+function AddBookingScreen() {
   const params = useLocalSearchParams<{
     organizationId: string;
     date?: string;
@@ -95,9 +96,11 @@ export default function AddBookingScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [repeat, setRepeat] = useState<number>(1);
   const [saved, setSaved] = useState<{
-    reference: string;
     label: string;
+    customer: string;
+    weeks: WeekResult[];
   } | null>(null);
 
   const startsAt = start === null ? null : lagosInstant(date, start);
@@ -144,6 +147,7 @@ export default function AddBookingScreen() {
 
   function resetForAnother() {
     setSaved(null);
+    setRepeat(1);
     setStart(null);
     setName("");
     setPhone("");
@@ -154,8 +158,82 @@ export default function AddBookingScreen() {
     setFormError(null);
   }
 
+  /** The request for one week. Only the first week takes the payment. */
+  function bodyFor(week: { startsAt: string }, first: boolean, kobo: number) {
+    return {
+      pitchId: pitch!.id,
+      startsAt: week.startsAt,
+      durationMinutes: length,
+      customerName: name.trim(),
+      customerPhone: phone.trim() || undefined,
+      channel,
+      paymentStatus: (first && payment !== "unpaid" ? "paid" : "unpaid") as
+        "paid" | "unpaid",
+      ...(first && payment !== "unpaid" ? { paymentMethod: payment } : {}),
+      // A special price applies to every week; otherwise each week gets its
+      // own standard price from the API.
+      ...(kobo !== standard ? { amountMinor: kobo } : {}),
+      note: note.trim() || undefined,
+    };
+  }
+
+  /**
+   * Saves the later weeks one by one. Each is its own booking, checked by the
+   * API; a taken week is reported and the rest carry on. If the connection
+   * drops, the weeks not yet sent stay "unsent" for a retry with the same keys.
+   */
+  async function saveWeeks(
+    weeks: { date: string; startsAt: string }[],
+    kobo: number,
+  ): Promise<WeekResult[]> {
+    const results: WeekResult[] = [];
+    let offline = false;
+    for (const week of weeks) {
+      if (offline) {
+        results.push({ date: week.date, state: "unsent" });
+        continue;
+      }
+      const id = `${pitch!.id}:${week.startsAt}:${length}`;
+      try {
+        const response = await createManualBooking(
+          organizationId,
+          bodyFor(week, false, kobo),
+          { headers: { "idempotency-key": keyFor(id) } },
+        );
+        if (response.status === 200 || response.status === 201) {
+          keys.current.delete(id);
+          results.push({
+            date: week.date,
+            state: "saved",
+            reference: response.data.reference,
+          });
+        } else {
+          keys.current.delete(id);
+          results.push({
+            date: week.date,
+            state: "refused",
+            reason:
+              (response.data as ErrorBody).error ??
+              "This week could not be saved.",
+          });
+        }
+      } catch {
+        offline = true;
+        results.push({ date: week.date, state: "unsent" });
+      }
+    }
+    return results;
+  }
+
+  function refreshDay() {
+    const userId = auth.status === "signedIn" ? auth.me.user.id : null;
+    void queryClient.invalidateQueries({
+      queryKey: venueCalendarKey(userId, organizationId),
+    });
+  }
+
   async function save() {
-    if (!pitch || !startsAt) return;
+    if (!pitch || !startsAt || start === null) return;
     const next: Record<string, string> = {};
     if (name.trim().length < 2) next.customerName = "Enter the customer's name";
     const kobo = priceText ? toKobo(priceText) : null;
@@ -163,38 +241,34 @@ export default function AddBookingScreen() {
     else if (kobo === null)
       next.amountMinor = "Enter the price in naira, e.g. 25,000";
     setErrors(next);
-    if (Object.keys(next).length) return;
+    if (Object.keys(next).length || kobo === null) return;
 
-    const id = `${pitch.id}:${startsAt}:${length}`;
+    const [first, ...later] = weeklyDates(date, start, repeat);
+    const id = `${pitch.id}:${first.startsAt}:${length}`;
     setSaving(true);
     setFormError(null);
     try {
       const response = await createManualBooking(
         organizationId,
-        {
-          pitchId: pitch.id,
-          startsAt,
-          durationMinutes: length,
-          customerName: name.trim(),
-          customerPhone: phone.trim() || undefined,
-          channel,
-          paymentStatus: payment === "unpaid" ? "unpaid" : "paid",
-          ...(payment === "unpaid" ? {} : { paymentMethod: payment }),
-          ...(kobo !== standard ? { amountMinor: kobo! } : {}),
-          note: note.trim() || undefined,
-        },
+        bodyFor(first, true, kobo),
         { headers: { "idempotency-key": keyFor(id) } },
       );
       if (response.status === 200 || response.status === 201) {
         keys.current.delete(id);
+        const rest = await saveWeeks(later, kobo);
         setSaved({
-          reference: response.data.reference,
-          label: `${dateParts(date).long}, ${formatLocalTime(start!)} to ${formatLocalTime(start! + length)}`,
+          label: `${dateParts(date).long}, ${formatLocalTime(start)} to ${formatLocalTime(start + length)}`,
+          customer: name.trim(),
+          weeks: [
+            {
+              date: first.date,
+              state: "saved",
+              reference: response.data.reference,
+            },
+            ...rest,
+          ],
         });
-        const userId = auth.status === "signedIn" ? auth.me.user.id : null;
-        void queryClient.invalidateQueries({
-          queryKey: venueCalendarKey(userId, organizationId),
-        });
+        refreshDay();
         return;
       }
       keys.current.delete(id);
@@ -220,23 +294,91 @@ export default function AddBookingScreen() {
     }
   }
 
-  if (saved)
+  async function retryUnsent() {
+    if (!saved || start === null) return;
+    const kobo = toKobo(priceText);
+    if (kobo === null) return;
+    const unsent = saved.weeks
+      .filter((week) => week.state === "unsent")
+      .map((week) => ({
+        date: week.date,
+        startsAt: lagosInstant(week.date, start),
+      }));
+    setSaving(true);
+    const retried = await saveWeeks(unsent, kobo);
+    setSaving(false);
+    const byDate = new Map(retried.map((week) => [week.date, week]));
+    setSaved({
+      ...saved,
+      weeks: saved.weeks.map((week) => byDate.get(week.date) ?? week),
+    });
+    refreshDay();
+  }
+
+  if (saved) {
+    const repeated = saved.weeks.length > 1;
+    const unsent = saved.weeks.some((week) => week.state === "unsent");
+    const allSaved = saved.weeks.every((week) => week.state === "saved");
     return (
       <SafeAreaView
         edges={["bottom"]}
         style={{ flex: 1, backgroundColor: colors.background }}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Notice tone="success" title="Booking saved">
-            <Body>{saved.label}</Body>
+          <Notice
+            tone={allSaved ? "success" : undefined}
+            title={repeatSummary(saved.weeks)}
+          >
+            <Body>
+              {repeated
+                ? `Every ${dateParts(date).long.split(" ")[0]}, ${formatLocalTime(start!)} to ${formatLocalTime(start! + length)}`
+                : saved.label}
+            </Body>
             <Body weight="semibold">
-              {name.trim()}, {saved.reference}
+              {saved.customer}
+              {repeated
+                ? ""
+                : `, ${(saved.weeks[0] as { reference: string }).reference}`}
             </Body>
             <Body tone="muted">
-              The time is blocked for players straight away.
+              {repeated
+                ? "Saved weeks are blocked for players straight away. Later weeks are saved as not paid yet."
+                : "The time is blocked for players straight away."}
             </Body>
           </Notice>
-          <Button label="Back to the day" onPress={() => router.back()} />
+          {repeated ? (
+            <View style={{ gap: space.xs }}>
+              {saved.weeks.map((week) => (
+                <View key={week.date} style={styles.week}>
+                  <Body weight="semibold" numeric style={{ width: 132 }}>
+                    {shortDay(week.date)}
+                  </Body>
+                  <Body
+                    style={{ flex: 1 }}
+                    tone={week.state === "saved" ? undefined : "danger"}
+                  >
+                    {week.state === "saved"
+                      ? `Saved, ${week.reference}`
+                      : week.state === "refused"
+                        ? week.reason
+                        : "Not sent: no connection"}
+                  </Body>
+                </View>
+              ))}
+            </View>
+          ) : null}
+          {unsent ? (
+            <Button
+              label="Try the unsent weeks again"
+              onPress={() => void retryUnsent()}
+              busy={saving}
+            />
+          ) : null}
+          <Button
+            variant={unsent ? "outline" : "primary"}
+            label="Back to the day"
+            onPress={() => router.back()}
+          />
           <Button
             variant="outline"
             label="Add another booking"
@@ -245,6 +387,7 @@ export default function AddBookingScreen() {
         </ScrollView>
       </SafeAreaView>
     );
+  }
 
   return (
     <SafeAreaView
@@ -275,7 +418,7 @@ export default function AddBookingScreen() {
             />
           ) : pitches.length === 0 ? (
             <Notice title="This venue has no pitches yet">
-              <Body tone="muted">Add a pitch on the website first.</Body>
+              <Body tone="muted">Add one from Manage, on the Venue tab.</Body>
             </Notice>
           ) : (
             <>
@@ -405,6 +548,21 @@ export default function AddBookingScreen() {
                 value={payment}
                 onChange={setPayment}
               />
+              <ChipRow label="Repeat every week">
+                {REPEAT_CHOICES.map((weeks) => (
+                  <Chip
+                    key={weeks}
+                    label={weeks === 1 ? "Just this day" : `${weeks} weeks`}
+                    selected={weeks === repeat}
+                    onPress={() => setRepeat(weeks)}
+                  />
+                ))}
+              </ChipRow>
+              {repeat > 1 ? (
+                <Body tone="muted" size={14} style={{ marginTop: -space.sm }}>
+                  {`Every ${dateParts(date).long.split(" ")[0]} until ${shortDay(weeklyDates(date, 0, repeat).at(-1)!.date)}. Each week is checked on its own; taken weeks are skipped. Later weeks are saved as not paid yet.`}
+                </Body>
+              ) : null}
               <Field
                 label="Note (optional)"
                 placeholder="e.g. Regular Thursday team"
@@ -434,7 +592,9 @@ export default function AddBookingScreen() {
                   ? "Choose a kick-off time"
                   : blocked
                     ? "This time is taken. Choose another."
-                    : "Save booking"
+                    : repeat > 1
+                      ? `Save ${repeat} weeks`
+                      : "Save booking"
               }
               onPress={() => void save()}
               busy={saving}
@@ -537,9 +697,18 @@ function ChoiceRow<T extends string>({
   );
 }
 
+/** "Thu 26 Nov" */
+function shortDay(date: string) {
+  const parts = dateParts(date);
+  return `${parts.weekday} ${parts.day} ${parts.month}`;
+}
+
 const styles = StyleSheet.create({
+  week: { flexDirection: "row", gap: space.sm, alignItems: "flex-start" },
   content: { padding: space.lg, paddingBottom: space.xxl * 2, gap: space.lg },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   check: { borderRadius: radius.md, padding: space.md },
   bar: { borderTopWidth: 1, padding: space.lg, gap: space.sm },
 });
+
+export default needsVenue(AddBookingScreen);

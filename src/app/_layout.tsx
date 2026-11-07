@@ -161,6 +161,15 @@ export default function RootLayout() {
             />
             <Stack.Screen name="venue/pin" options={{ title: "Map pin" }} />
             <Stack.Screen
+              name="venue/closures"
+              options={{ title: "Closures" }}
+            />
+            <Stack.Screen name="venue/staff" options={{ title: "Team" }} />
+            <Stack.Screen
+              name="venue/add-pitch"
+              options={{ title: "Add a pitch" }}
+            />
+            <Stack.Screen
               name="venue/hours"
               options={{ title: "Hours and prices" }}
             />

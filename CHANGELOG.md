@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-07 — Owner operations (0.16.0, OP-01)
+
+- Closures: close a pitch for whole days or part of a day from Manage, with a note for the team; reopen in one tap. If games are booked in that time, the app lists when.
+- Team: owners add staff by phone number and remove them. Staff can close a pitch too.
+- Add a pitch from Manage; it goes straight to its hours and prices.
+- Add booking can repeat every week for 2, 4, 8 or 12 weeks. Each week is checked on its own, taken weeks are listed, and unsent weeks can be retried safely.
+- The day view folds cancelled bookings into one line under each pitch.
+- Venue screens opened by address alone (a web reload or old link) go to the Venue tab instead of failing.
+
 ## 2026-11-07 — Returning players (0.15.0, RP-01)
 
 - Play remembers your usual area, game length, pitch size and budget, and opens on them next time. A choice on the first-launch welcome still wins.
