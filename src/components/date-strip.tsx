@@ -6,6 +6,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { Body, Press } from "@/components/ui";
+import { chosenState } from "@/lib/a11y";
 import { dateParts } from "@/lib/format";
 import { radius, space } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
@@ -76,8 +77,7 @@ export function DateStrip({
           <Press
             key={day}
             accessibilityRole="button"
-            accessibilityState={{ selected: chosen }}
-            aria-selected={chosen}
+            {...chosenState(chosen)}
             accessibilityLabel={parts.long}
             onPress={() => onChange(day)}
             style={[

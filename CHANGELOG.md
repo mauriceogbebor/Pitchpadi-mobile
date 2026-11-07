@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-07 — Polish: lighter and more accessible (0.17.1, PL-01)
+
+- The app's download is about 2.6 MB lighter: only the six font weights the app uses are bundled (not all 25), and an unused 950 KB icon font is no longer included.
+- Choice buttons (days, times, chips) are announced as pressed on the web and as selected on phones; the Venue tab's Manage button is a full 44 px tap target; Book again's taken weeks are no longer dimmed below readable contrast.
+
 ## 2026-11-07 — Venue photos (0.17.0, PH-01)
 
 - Owners add up to 3 photos of each venue from Manage, Photos; pick the cover and remove them. Photos are shrunk on the phone before sending.

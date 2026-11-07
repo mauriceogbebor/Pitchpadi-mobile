@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    minHeight: 40,
+    minHeight: TAP,
     paddingHorizontal: space.md,
     borderRadius: radius.pill,
     backgroundColor: "rgba(255,255,255,0.12)",

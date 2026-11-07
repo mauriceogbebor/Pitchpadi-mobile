@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Body, Press } from "@/components/ui";
+import { chosenState } from "@/lib/a11y";
 import { radius, space, TAP } from "@/theme/tokens";
 import { useColors } from "@/theme/use-theme";
 
@@ -57,8 +58,7 @@ export function Chip({
   return (
     <Press
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      aria-selected={selected}
+      {...chosenState(selected)}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={busy ? "Working" : undefined}
       onPress={onPress}
@@ -125,9 +125,7 @@ export function TimeChip({
     <Animated.View style={animated}>
       <Press
         accessibilityRole="button"
-        accessibilityState={{ selected, disabled }}
-        aria-selected={selected}
-        aria-disabled={disabled}
+        {...chosenState(selected, disabled)}
         accessibilityLabel={accessibilityLabel ?? label}
         onPress={onPress}
         disabled={disabled}

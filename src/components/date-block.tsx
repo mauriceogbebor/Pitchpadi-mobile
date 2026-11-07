@@ -40,7 +40,7 @@ export function DateBlock({
       >
         {parts.day}
       </Body>
-      <Body size={11} style={{ color: fg, opacity: 0.8 }}>
+      <Body size={11} style={{ color: fg }}>
         {parts.month}
       </Body>
     </View>

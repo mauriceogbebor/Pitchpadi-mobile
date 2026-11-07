@@ -261,7 +261,8 @@ function WeekRow({
         ? "Tomorrow"
         : `${day.weekday} ${day.day} ${day.month}`;
   return (
-    <Card style={[styles.row, !option.slot && !mine && { opacity: 0.75 }]}>
+    // No dimming: faded text on a dimmed card fell below 4.5:1 contrast (PL-01).
+    <Card style={styles.row}>
       <DateBlock
         date={option.date}
         strong={!!option.slot || !!mine}
