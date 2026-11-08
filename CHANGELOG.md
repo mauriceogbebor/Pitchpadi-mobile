@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-08 — TestFlight beta (TF-01, D-061)
+
+- New EAS profile `beta`: an App Store build of "PitchPadi Beta" (`com.mauricemcbig.pitchpadi.beta`) on the Repitair Apple team. It talks to the Railway test server; build numbers are kept by EAS.
+- `APP_VARIANT=beta` switches the name and app ID; everything else is the same app.
+- The app now declares it uses only standard encryption, so TestFlight doesn't ask about export compliance for each build.
+- README: first build, submit, internal testers and shared links.
+
 ## 2026-11-07 — API client for the admin redesign (AD-02)
 
 - The app's generated API client includes the new PitchPadi Admin routes. No app screens changed; no version change.

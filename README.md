@@ -72,6 +72,59 @@ Build and install:
 
 Then run it like Expo Go: start the API, run `EXPO_PUBLIC_API_URL=http://<your Mac's address>:4000 npx expo start`, and open the PitchPadi app on the phone instead of Expo Go. Build again only after adding a native library or changing the icon, splash or app settings; code changes load straight from your Mac.
 
+## TestFlight beta (iPhone)
+
+"PitchPadi Beta" is a separate app for testing on iPhones from TestFlight (D-061). It uses the Repitair Apple team (`36NYPSWU4R`) under its own ID, `com.mauricemcbig.pitchpadi.beta`. That keeps `com.pitchpadi.app` and the name "PitchPadi" free for PitchPadi's own Apple account, because Apple only moves apps that have been released. It talks to the Railway test server, so only numbers in the API's `TEST_PHONES` can sign in.
+
+**First build.** Run these on your Mac, in `pitchpadi-mobile`:
+
+1. Install packages and check you're signed in to Expo:
+   ```bash
+   npm install
+   npx eas-cli@latest whoami
+   ```
+   It should say `mauricemcbig`. If not, run `npx eas-cli@latest login`.
+2. Build:
+
+   ```bash
+   npx eas-cli@latest build -p ios --profile beta
+   ```
+
+   When asked:
+   - sign in with the Apple ID you use for Repitair;
+   - pick the team `36NYPSWU4R`;
+   - let EAS create the App ID, certificate and profile;
+   - answer **Yes** to the push key.
+
+   The build takes about 15 to 25 minutes on Expo's servers.
+
+3. Send it to App Store Connect:
+   ```bash
+   npx eas-cli@latest submit -p ios --profile beta --latest
+   ```
+   If the app doesn't exist yet, EAS offers to create "PitchPadi Beta". If you would rather create it yourself: in App Store Connect, Apps, +, New App. Choose iOS, name "PitchPadi Beta", bundle ID `com.mauricemcbig.pitchpadi.beta`, SKU `pitchpadi-beta`. Apple then processes the build for 10 to 30 minutes.
+4. **In App Store Connect,** open PitchPadi Beta, then TestFlight, then Internal Testing.
+   - Create a group, "PitchPadi team", and add yourself.
+   - Others must first be users on the Repitair team (Users and Access); any role works.
+   - Internal testers don't need Apple's review.
+5. **On the iPhone,** install TestFlight from the App Store, accept the invitation and install PitchPadi Beta. Sign in with a number listed in `TEST_PHONES`; the code shows on screen.
+
+**Later builds:**
+
+```bash
+npx eas-cli@latest build -p ios --profile beta --auto-submit
+```
+
+Build numbers go up by themselves. The version testers see comes from `app.json`.
+
+**Shared links:** a link like `https://pitchpadi-web-production.up.railway.app/pitches/...` opens in the beta when the website lists the beta. Set this once, in `pitchpadi-fe`:
+
+```bash
+railway service pitchpadi-web
+railway variable set IOS_TEAM_ID=36NYPSWU4R
+railway variable set IOS_BUNDLE_IDS=com.mauricemcbig.pitchpadi.beta
+```
+
 ## Commands
 
 | Command                  | What it does                                                                   |
