@@ -9,6 +9,11 @@ const EAS_PROJECT_ID = "90a95703-36f4-4610-ad18-9b6a2c574992";
  * - EAS_PROJECT_ID: the Expo project (@mauricemcbig/pitchpadi), needed for
  *   EAS builds and push tokens. Without it the app runs in Expo Go, with push
  *   switched off. The default below is the project `eas init` created.
+ * - APP_VARIANT=beta: the TestFlight beta (D-061). It has its own identity,
+ *   com.mauricemcbig.pitchpadi.beta named "PitchPadi Beta", on the Repitair
+ *   Apple team, so com.pitchpadi.app and the name "PitchPadi" stay free for
+ *   PitchPadi's own Apple account. Apple only moves released apps between
+ *   accounts.
  * - EXPO_PUBLIC_WEB_URL: the website. When it is a real https address, shared
  *   team links (/b/…), pitch links (/pitches/…) and venue links (/venues/…)
  *   open in the app as verified Android App Links and iOS Universal Links. The
@@ -18,12 +23,16 @@ const EAS_PROJECT_ID = "90a95703-36f4-4610-ad18-9b6a2c574992";
  * @param {import("expo/config").ConfigContext} context
  * @returns {import("expo/config").ExpoConfig}
  */
+const BETA_ID = "com.mauricemcbig.pitchpadi.beta";
+
 module.exports = ({ config }) => {
+  const beta = process.env.APP_VARIANT === "beta";
   const webUrl = process.env.EXPO_PUBLIC_WEB_URL ?? "";
   const host = /^https:\/\//.test(webUrl) ? new URL(webUrl).host : null;
   const projectId = process.env.EAS_PROJECT_ID || EAS_PROJECT_ID;
   return {
     ...config,
+    ...(beta ? { name: "PitchPadi Beta" } : {}),
     plugins: [
       ...(config.plugins ?? []),
       ["expo-notifications", { color: "#0B3D2E" }],
@@ -51,10 +60,14 @@ module.exports = ({ config }) => {
     },
     ios: {
       ...config.ios,
+      ...(beta ? { bundleIdentifier: BETA_ID } : {}),
+      // PitchPadi uses only standard HTTPS: no export compliance questions.
+      config: { ...config.ios?.config, usesNonExemptEncryption: false },
       ...(host ? { associatedDomains: [`applinks:${host}`] } : {}),
     },
     android: {
       ...config.android,
+      ...(beta ? { package: BETA_ID } : {}),
       ...(host
         ? {
             intentFilters: [

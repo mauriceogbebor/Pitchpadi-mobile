@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 16.0.0",
-    "appVersionSource": "local"
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -19,6 +19,23 @@
       "extends": "development",
       "ios": {
         "simulator": true
+      }
+    },
+    "beta": {
+      "distribution": "store",
+      "environment": "preview",
+      "autoIncrement": true,
+      "env": {
+        "APP_VARIANT": "beta",
+        "EXPO_PUBLIC_API_URL": "https://pitchpadi-api-production.up.railway.app",
+        "EXPO_PUBLIC_WEB_URL": "https://pitchpadi-web-production.up.railway.app"
+      }
+    }
+  },
+  "submit": {
+    "beta": {
+      "ios": {
+        "appleTeamId": "36NYPSWU4R"
       }
     }
   }
